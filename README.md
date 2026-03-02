@@ -1,6 +1,6 @@
 # 🎧 Binaural Lab - Luky's Edition
 
-[English below / Čeština níže]
+[English/Čeština níže]
 
 ---
 
