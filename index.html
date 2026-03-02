@@ -2,35 +2,43 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Binaural Lab - Luky's Edition 🎧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Binaural Lab 🎧</title>
     <style>
-        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
+        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding: env(safe-area-inset-top) 15px 20px 15px; margin: 0; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 850px; margin: auto; background: #151515; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #222; position: relative; }
         
-        .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 10px; cursor: pointer; font-size: 1.3em; }
-        .lang-bar span { opacity: 0.4; transition: 0.3s; }
+        .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 10px; cursor: pointer; font-size: 1.3em; z-index: 100; }
+        .lang-bar span { opacity: 0.3; transition: 0.3s; }
         .lang-bar span.active { opacity: 1; transform: scale(1.2); }
 
-        canvas { width: 100%; height: 200px; background: #000; border-radius: 12px; margin: 20px 0; border: 1px solid #333; }
-        .controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-        .input-group { background: #222; padding: 10px; border-radius: 10px; }
-        input[type="number"] { background: #111; border: 1px solid #444; color: #00ff95; padding: 8px; border-radius: 5px; width: 75px; text-align: center; font-size: 1.1em; }
+        canvas { width: 100%; height: 160px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; }
+        .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+        .input-group { background: #222; padding: 8px; border-radius: 10px; flex: 1; min-width: 80px; }
+        input[type="number"] { background: #111; border: 1px solid #444; color: #00ff95; padding: 8px; border-radius: 5px; width: 100%; box-sizing: border-box; text-align: center; font-size: 1.1em; }
         
-        .presets { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-        .btn-preset { background: #333; color: #bbb; border: 1px solid #444; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.85em; transition: 0.2s; }
-        .btn-preset:hover { background: #444; color: white; border-color: #00ff95; }
+        .presets { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn-preset { background: #222; color: #bbb; border: 1px solid #333; padding: 10px 12px; border-radius: 15px; cursor: pointer; font-size: 0.8em; flex: 1 1 30%; }
 
-        button.main-btn { padding: 12px 30px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-row { width: 100%; display: flex; gap: 10px; margin-top: 10px; }
+        button.main-btn { flex: 1; padding: 15px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; text-transform: uppercase; font-size: 1em; }
         .btn-start { background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; }
-        .btn-stop { background: linear-gradient(135deg, #c0392b, #e74c3c); color: white; margin-left: 10px; }
+        .btn-stop { background: linear-gradient(135deg, #c0392b, #e74c3c); color: white; }
         
-        .volume-panel { margin: 20px 0; color: #888; font-size: 0.9em; }
-        input[type="range"] { width: 200px; accent-color: #27ae60; vertical-align: middle; }
+        .volume-panel { margin: 20px 0; color: #888; }
+        input[type="range"] { width: 80%; accent-color: #27ae60; }
 
-        .info-table { width: 100%; margin-top: 30px; border-collapse: collapse; background: #111; border-radius: 10px; overflow: hidden; }
-        .info-table th, .info-table td { padding: 12px; text-align: left; border-bottom: 1px solid #222; }
-        .info-table th { background: #1a1a1a; color: #00ff95; font-size: 0.8em; }
-        .diff-display { font-size: 1.5em; color: #00ff95; font-weight: bold; margin: 10px 0; }
+        .info-table { width: 100%; margin-top: 20px; border-collapse: collapse; background: #111; border-radius: 10px; font-size: 0.8em; }
+        .info-table td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
+        .diff-display { font-size: 1.8em; color: #00ff95; font-weight: bold; margin: 10px 0; }
+        
+        @media (max-width: 600px) {
+            .container { padding: 15px; border-radius: 0; border: none; background: transparent; }
+            .btn-preset { font-size: 0.75em; }
+        }
     </style>
 </head>
 <body>
@@ -40,54 +48,46 @@
         <span id="b-cs" class="active" onclick="changeLang('cs')">🇨🇿</span>
         <span id="b-en" onclick="changeLang('en')">🇬🇧</span>
         <span id="b-de" onclick="changeLang('de')">🇩🇪</span>
-        <span id="b-es" onclick="changeLang('es')">🇪🇸</span>
-        <span id="b-fr" onclick="changeLang('fr')">🇫🇷</span>
     </div>
 
-    <h1 id="txt-title">Binaural Lab 🎧</h1>
+    <h1 id="txt-title" style="font-size: 1.5em;">Binaural Lab 🎧</h1>
     
     <div class="presets">
-        <button class="btn-preset" onclick="setPreset(100, 101.5)"><span id="p1">🌙 Spánek</span> (1.5 Hz)</button>
-        <button class="btn-preset" onclick="setPreset(200, 206)"><span id="p2">🧘 Meditace</span> (6 Hz)</button>
-        <button class="btn-preset" onclick="setPreset(300, 310)"><span id="p3">🎨 Relax</span> (10 Hz)</button>
-        <button class="btn-preset" onclick="setPreset(400, 420)"><span id="p4">🧠 Fokus</span> (20 Hz)</button>
-        <button class="btn-preset" onclick="setPreset(200, 240)"><span id="p5">⚡ Výkon</span> (40 Hz)</button>
+        <button class="btn-preset" onclick="setPreset(100, 101.5)"><span id="p1">🌙 Spánek</span></button>
+        <button class="btn-preset" onclick="setPreset(200, 206)"><span id="p2">🧘 Meditace</span></button>
+        <button class="btn-preset" onclick="setPreset(300, 310)"><span id="p3">🎨 Relax</span></button>
+        <button class="btn-preset" onclick="setPreset(400, 420)"><span id="p4">🧠 Fokus</span></button>
+        <button class="btn-preset" onclick="setPreset(200, 240)"><span id="p5">⚡ Výkon</span></button>
     </div>
 
     <div class="controls">
         <div class="input-group">
-            <label id="txt-l" style="display:block; font-size:0.7em; color:#888;">Levé (Hz)</label>
+            <label id="txt-l" style="display:block; font-size:0.6em; color:#888;">L (Hz)</label>
             <input type="number" id="leftFreq" value="60" oninput="updateDiff()">
         </div>
-        <div style="font-size: 1.5em; color: #444;">&</div>
         <div class="input-group">
-            <label id="txt-r" style="display:block; font-size:0.7em; color:#888;">Pravé (Hz)</label>
+            <label id="txt-r" style="display:block; font-size:0.6em; color:#888;">P (Hz)</label>
             <input type="number" id="rightFreq" value="63" oninput="updateDiff()">
         </div>
-        <div style="margin-left:20px;">
+        <div class="btn-row">
             <button class="main-btn btn-start" id="txt-start" onclick="start()">Start</button>
             <button class="main-btn btn-stop" id="txt-stop" onclick="stop()">Stop</button>
         </div>
     </div>
 
-    <div class="diff-display" id="diffVal">Rozdíl: 3 Hz</div>
+    <div class="diff-display" id="diffVal">3.0 Hz</div>
 
     <div class="volume-panel">
-        <span id="txt-vol">Hlasitost</span>: <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" oninput="updateVolume()">
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" oninput="updateVolume()">
     </div>
 
     <canvas id="visual"></canvas>
 
-    <div style="color: #f1c40f; font-size: 0.8em; margin-bottom: 20px;" id="txt-sony">
-        ✨ Sony WH-1000XM5 Hi-Res Mode Active
+    <div style="color: #f1c40f; font-size: 0.7em; margin-bottom: 20px;" id="txt-sony">
+        ✨ Sony WH-1000XM5 Active
     </div>
 
-    <table class="info-table">
-        <thead>
-            <tr><th id="h1">Vlna</th><th id="h2">Frekvence</th><th id="h3">Účinek</th></tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-    </table>
+    <table class="info-table" id="table-content"></table>
 </div>
 
 <script>
@@ -97,29 +97,24 @@ const trans = {
     cs: {
         title: "Binaural Lab 🎧", p1: "🌙 Spánek", p2: "🧘 Meditace", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Výkon",
         l: "Levé (Hz)", r: "Pravé (Hz)", start: "Start", stop: "Stop", vol: "Hlasitost", diff: "Rozdíl",
-        sony: "✨ Sony WH-1000XM5 Hi-Res Mode Active", h1: "Vlna", h2: "Frekvence", h3: "Účinek",
-        rows: [["Delta","0.5–4 Hz","Hluboký spánek, léčení těla."],["Theta","4–8 Hz","Hluboká relaxace, vhledy."],["Alpha","8–13 Hz","Učení, klidná mysl."],["Beta","13–30 Hz","Analytické myšlení, bdělost."]]
+        sony: "✨ Sony WH-1000XM5 Mode Active", rows: [["Delta","0.5–4Hz","Spánek"],["Theta","4–8Hz","Meditace"],["Alpha","8–13Hz","Klid"],["Beta","13–30Hz","Fokus"]]
     },
     en: {
         title: "Binaural Lab 🎧", p1: "🌙 Sleep", p2: "🧘 Meditate", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Power",
         l: "Left (Hz)", r: "Right (Hz)", start: "Start", stop: "Stop", vol: "Volume", diff: "Difference",
-        sony: "✨ Sony WH-1000XM5 Hi-Res Mode Optimized", h1: "Wave", h2: "Frequency", h3: "Effect",
-        rows: [["Delta","0.5–4 Hz","Deep sleep, physical healing."],["Theta","4–8 Hz","Deep relaxation, insights."],["Alpha","8–13 Hz","Learning, calm mind."],["Beta","13–30 Hz","Analytical thinking, focus."]]
+        sony: "✨ Sony WH-1000XM5 Optimized", rows: [["Delta","0.5–4Hz","Sleep"],["Theta","4–8Hz","Meditate"],["Alpha","8–13Hz","Calm"],["Beta","13–30Hz","Focus"]]
     },
-    de: { title: "Binaural Lab 🎧", p1: "🌙 Schlaf", p2: "🧘 Meditation", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Leistung", l: "Links (Hz)", r: "Rechts (Hz)", start: "Start", stop: "Stopp", vol: "Lautstärke", diff: "Differenz", sony: "✨ Sony WH-1000XM5 Hi-Res Modus Aktiv", h1: "Welle", h2: "Frequenz", h3: "Wirkung", rows: [["Delta","0.5–4 Hz","Tiefschlaf, Heilung."],["Theta","4–8 Hz","Entspannung, Einsicht."],["Alpha","8–13 Hz","Lernen, Ruhe."],["Beta","13–30 Hz","Fokus, Analyse."]] },
-    es: { title: "Binaural Lab 🎧", p1: "🌙 Sueño", p2: "🧘 Meditar", p3: "🎨 Relax", p4: "🧠 Enfoque", p5: "⚡ Poder", l: "Izq (Hz)", r: "Der (Hz)", start: "Iniciar", stop: "Parar", vol: "Volumen", diff: "Diferencia", sony: "✨ Sony WH-1000XM5 Modo Hi-Res Activo", h1: "Onda", h2: "Frecuencia", h3: "Efecto", rows: [["Delta","0.5–4 Hz","Sueño profundo, cura."],["Theta","4–8 Hz","Relajación, intuición."],["Alpha","8–13 Hz","Aprendizaje, calma."],["Beta","13–30 Hz","Análisis, alerta."]] },
-    fr: { title: "Binaural Lab 🎧", p1: "🌙 Sommeil", p2: "🧘 Méditer", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Énergie", l: "Gauche (Hz)", r: "Droite (Hz)", start: "Lancer", stop: "Arrêter", vol: "Volume", diff: "Différence", sony: "✨ Sony WH-1000XM5 Mode Hi-Res Activé", h1: "Onde", h2: "Fréquence", h3: "Effet", rows: [["Delta","0.5–4 Hz","Sommeil profond, guérison."],["Theta","4–8 Hz","Relaxation, intuition."],["Alpha","8–13 Hz","Apprentissage, calme."],["Beta","13–30 Hz","Analyse, vigilance."]] }
+    de: { title: "Binaural Lab 🎧", p1: "🌙 Schlaf", p2: "🧘 Meditation", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Leistung", l: "Links", r: "Rechts", start: "Start", stop: "Stopp", vol: "Lautst.", diff: "Diff.", sony: "✨ Sony WH-1000XM5 Aktiv", rows: [["Delta","0.5–4Hz","Schlaf"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Ruhe"],["Beta","13–30Hz","Fokus"]] }
 };
 
 function changeLang(lang) {
     curLang = lang;
     const t = trans[lang];
     document.getElementById('txt-title').innerText = t.title;
-    ['p1','p2','p3','p4','p5','h1','h2','h3'].forEach(id => document.getElementById(id).innerText = t[id]);
-    document.getElementById('txt-l').innerText = t.l; document.getElementById('txt-r').innerText = t.r;
+    ['p1','p2','p3','p4','p5'].forEach(id => document.getElementById(id).innerText = t[id]);
     document.getElementById('txt-start').innerText = t.start; document.getElementById('txt-stop').innerText = t.stop;
-    document.getElementById('txt-vol').innerText = t.vol; document.getElementById('txt-sony').innerText = t.sony;
-    document.getElementById('table-body').innerHTML = t.rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    document.getElementById('txt-sony').innerText = t.sony;
+    document.getElementById('table-content').innerHTML = t.rows.map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
     document.querySelectorAll('.lang-bar span').forEach(s => s.classList.remove('active'));
     document.getElementById('b-' + lang).classList.add('active');
     updateDiff();
@@ -128,7 +123,7 @@ function changeLang(lang) {
 function updateDiff() {
     const f1 = parseFloat(document.getElementById("leftFreq").value) || 0;
     const f2 = parseFloat(document.getElementById("rightFreq").value) || 0;
-    document.getElementById("diffVal").innerText = `${trans[curLang].diff}: ${Math.abs(f1 - f2).toFixed(1)} Hz`;
+    document.getElementById("diffVal").innerText = `${Math.abs(f1 - f2).toFixed(1)} Hz`;
 }
 
 function setPreset(l, r) {
@@ -143,6 +138,10 @@ function updateVolume() { if (gainNode) gainNode.gain.setTargetAtTime(document.g
 function start() {
     if (audioCtx) stop();
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Resume context on mobile touch
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
     gainNode = audioCtx.createGain(); gainNode.gain.value = document.getElementById("volume").value;
     const f1 = parseFloat(document.getElementById("leftFreq").value);
     const f2 = parseFloat(document.getElementById("rightFreq").value);
@@ -161,10 +160,10 @@ function drawWave(f1, f2) {
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.lineWidth = 2;
         ctx.beginPath(); ctx.strokeStyle = "#3498db";
-        for (let x = 0; x < canvas.width; x++) { let y = 100 + Math.sin((x * 0.03) + offset) * 45; ctx.lineTo(x, y); }
+        for (let x = 0; x < canvas.width; x++) { let y = 80 + Math.sin((x * 0.03) + offset) * 35; ctx.lineTo(x, y); }
         ctx.stroke();
         ctx.beginPath(); ctx.strokeStyle = "#e74c3c";
-        for (let x = 0; x < canvas.width; x++) { let y = 100 + Math.sin((x * 0.03 * (f2/f1)) + offset) * 45; ctx.lineTo(x, y); }
+        for (let x = 0; x < canvas.width; x++) { let y = 80 + Math.sin((x * 0.03 * (f2/f1)) + offset) * 35; ctx.lineTo(x, y); }
         ctx.stroke();
         offset += 0.05; animationId = requestAnimationFrame(draw);
     }
