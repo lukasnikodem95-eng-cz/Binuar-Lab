@@ -11,7 +11,7 @@
         body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding: env(safe-area-inset-top) 15px 20px 15px; margin: 0; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 850px; margin: auto; background: #151515; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #222; position: relative; }
         
-        .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 10px; cursor: pointer; font-size: 1.3em; z-index: 100; }
+        .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; cursor: pointer; font-size: 1.3em; z-index: 100; }
         .lang-bar span { opacity: 0.3; transition: 0.3s; }
         .lang-bar span.active { opacity: 1; transform: scale(1.2); }
 
@@ -38,6 +38,7 @@
         @media (max-width: 600px) {
             .container { padding: 15px; border-radius: 0; border: none; background: transparent; }
             .btn-preset { font-size: 0.75em; }
+            .lang-bar { font-size: 1.1em; top: 10px; right: 10px; }
         }
     </style>
 </head>
@@ -48,6 +49,8 @@
         <span id="b-cs" class="active" onclick="changeLang('cs')">🇨🇿</span>
         <span id="b-en" onclick="changeLang('en')">🇬🇧</span>
         <span id="b-de" onclick="changeLang('de')">🇩🇪</span>
+        <span id="b-es" onclick="changeLang('es')">🇪🇸</span>
+        <span id="b-fr" onclick="changeLang('fr')">🇫🇷</span>
     </div>
 
     <h1 id="txt-title" style="font-size: 1.5em;">Binaural Lab 🎧</h1>
@@ -104,7 +107,21 @@ const trans = {
         l: "Left (Hz)", r: "Right (Hz)", start: "Start", stop: "Stop", vol: "Volume", diff: "Difference",
         sony: "✨ Sony WH-1000XM5 Optimized", rows: [["Delta","0.5–4Hz","Sleep"],["Theta","4–8Hz","Meditate"],["Alpha","8–13Hz","Calm"],["Beta","13–30Hz","Focus"]]
     },
-    de: { title: "Binaural Lab 🎧", p1: "🌙 Schlaf", p2: "🧘 Meditation", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Leistung", l: "Links", r: "Rechts", start: "Start", stop: "Stopp", vol: "Lautst.", diff: "Diff.", sony: "✨ Sony WH-1000XM5 Aktiv", rows: [["Delta","0.5–4Hz","Schlaf"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Ruhe"],["Beta","13–30Hz","Fokus"]] }
+    de: { 
+        title: "Binaural Lab 🎧", p1: "🌙 Schlaf", p2: "🧘 Meditat.", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Leistung", 
+        l: "Links", r: "Rechts", start: "Start", stop: "Stopp", vol: "Lautst.", diff: "Diff.", 
+        sony: "✨ Sony WH-1000XM5 Aktiv", rows: [["Delta","0.5–4Hz","Schlaf"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Ruhe"],["Beta","13–30Hz","Fokus"]] 
+    },
+    es: { 
+        title: "Binaural Lab 🎧", p1: "🌙 Sueño", p2: "🧘 Meditar", p3: "🎨 Relax", p4: "🧠 Enfoque", p5: "⚡ Poder", 
+        l: "Izq", r: "Der", start: "Iniciar", stop: "Parar", vol: "Vol.", diff: "Dif.", 
+        sony: "✨ Sony WH-1000XM5 Activo", rows: [["Delta","0.5–4Hz","Sueño"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Calma"],["Beta","13–30Hz","Enfoque"]] 
+    },
+    fr: { 
+        title: "Binaural Lab 🎧", p1: "🌙 Sommeil", p2: "🧘 Méditer", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Énergie", 
+        l: "Gauche", r: "Droite", start: "Lancer", stop: "Arrêter", vol: "Vol.", diff: "Diff.", 
+        sony: "✨ Sony WH-1000XM5 Activé", rows: [["Delta","0.5–4Hz","Sommeil"],["Theta","4–8Hz","Méditer"],["Alpha","8–13Hz","Calme"],["Beta","13–30Hz","Focus"]] 
+    }
 };
 
 function changeLang(lang) {
@@ -138,10 +155,7 @@ function updateVolume() { if (gainNode) gainNode.gain.setTargetAtTime(document.g
 function start() {
     if (audioCtx) stop();
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Resume context on mobile touch
     if (audioCtx.state === 'suspended') audioCtx.resume();
-
     gainNode = audioCtx.createGain(); gainNode.gain.value = document.getElementById("volume").value;
     const f1 = parseFloat(document.getElementById("leftFreq").value);
     const f2 = parseFloat(document.getElementById("rightFreq").value);
