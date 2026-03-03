@@ -35,6 +35,8 @@
         .info-table td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .diff-display { font-size: 1.8em; color: #00ff95; font-weight: bold; margin: 10px 0; }
         
+        #swapBtn { background: #ff4400; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8em; font-weight: bold; transition: 0.3s; margin: 10px 0; width: 100%; }
+
         @media (max-width: 600px) {
             .container { padding: 15px; border-radius: 0; border: none; background: transparent; }
             .btn-preset { font-size: 0.75em; }
@@ -56,29 +58,32 @@
     <h1 id="txt-title" style="font-size: 1.5em;">Binaural Lab 🎧</h1>
     
     <div class="presets">
-        <button class="btn-preset" onclick="setPreset(100, 101.5)"><span id="p1">🌙 Spánek</span></button>
-        <button class="btn-preset" onclick="setPreset(200, 206)"><span id="p2">🧘 Meditace</span></button>
-        <button class="btn-preset" onclick="setPreset(300, 310)"><span id="p3">🎨 Relax</span></button>
-        <button class="btn-preset" onclick="setPreset(400, 420)"><span id="p4">🧠 Fokus</span></button>
-        <button class="btn-preset" onclick="setPreset(200, 240)"><span id="p5">⚡ Výkon</span></button>
+        <button class="btn-preset" onclick="setPreset(100, 101.5, 'relax')"><span id="p1">🌙 Spánek</span></button>
+        <button class="btn-preset" onclick="setPreset(200, 206, 'relax')"><span id="p2">🧘 Meditace</span></button>
+        <button class="btn-preset" onclick="setPreset(300, 310, 'relax')"><span id="p3">🎨 Relax</span></button>
+        <button class="btn-preset" onclick="setPreset(400, 420, 'energy')"><span id="p4">🧠 Fokus</span></button>
+        <button class="btn-preset" onclick="setPreset(200, 240, 'energy')"><span id="p5">⚡ Výkon</span></button>
     </div>
 
     <div class="controls">
         <div class="input-group">
             <label id="txt-l" style="display:block; font-size:0.6em; color:#888;">L (Hz)</label>
-            <input type="number" id="leftFreq" value="60" oninput="updateDiff()">
+            <input type="number" id="leftFreq" value="200" oninput="updateDiff(); updateSwapStatus();">
         </div>
         <div class="input-group">
             <label id="txt-r" style="display:block; font-size:0.6em; color:#888;">P (Hz)</label>
-            <input type="number" id="rightFreq" value="63" oninput="updateDiff()">
+            <input type="number" id="rightFreq" value="240" oninput="updateDiff(); updateSwapStatus();">
         </div>
+        
+        <button id="swapBtn" onclick="swapChannels()">MODE: ENERGY (L>R)</button>
+
         <div class="btn-row">
             <button class="main-btn btn-start" id="txt-start" onclick="start()">Start</button>
             <button class="main-btn btn-stop" id="txt-stop" onclick="stop()">Stop</button>
         </div>
     </div>
 
-    <div class="diff-display" id="diffVal">3.0 Hz</div>
+    <div class="diff-display" id="diffVal">40.0 Hz</div>
 
     <div class="volume-panel">
         <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" oninput="updateVolume()">
@@ -143,10 +148,45 @@ function updateDiff() {
     document.getElementById("diffVal").innerText = `${Math.abs(f1 - f2).toFixed(1)} Hz`;
 }
 
-function setPreset(l, r) {
-    document.getElementById("leftFreq").value = l;
-    document.getElementById("rightFreq").value = r;
+function updateSwapStatus() {
+    let left = parseFloat(document.getElementById('leftFreq').value);
+    let right = parseFloat(document.getElementById('rightFreq').value);
+    let btn = document.getElementById('swapBtn');
+    if (left > right) {
+        btn.innerText = "MODE: ENERGY (L>R)";
+        btn.style.backgroundColor = "#ff4400";
+    } else if (right > left) {
+        btn.innerText = "MODE: RELAX (R>L)";
+        btn.style.backgroundColor = "#3498db";
+    } else {
+        btn.innerText = "MODE: BALANCED";
+        btn.style.backgroundColor = "#444";
+    }
+}
+
+function setPreset(f1, f2, mode) {
+    let high = Math.max(f1, f2);
+    let low = Math.min(f1, f2);
+    if (mode === 'energy') {
+        document.getElementById("leftFreq").value = high;
+        document.getElementById("rightFreq").value = low;
+    } else {
+        document.getElementById("leftFreq").value = low;
+        document.getElementById("rightFreq").value = high;
+    }
     updateDiff();
+    updateSwapStatus();
+    if(audioCtx) start();
+}
+
+function swapChannels() {
+    let l = document.getElementById('leftFreq');
+    let r = document.getElementById('rightFreq');
+    let temp = l.value;
+    l.value = r.value;
+    r.value = temp;
+    updateDiff();
+    updateSwapStatus();
     if(audioCtx) start();
 }
 
@@ -184,6 +224,7 @@ function drawWave(f1, f2) {
     draw();
 }
 changeLang('cs');
+updateSwapStatus();
 </script>
 </body>
 </html>
