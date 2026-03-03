@@ -3,65 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0a">
     <title>Binaural Lab 🎧</title>
     <style>
-        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .container { max-width: 850px; margin: auto; background: #151515; padding: 25px; border-radius: 20px; border: 1px solid #222; }
+        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding: env(safe-area-inset-top) 15px 20px 15px; margin: 0; -webkit-tap-highlight-color: transparent; }
+        .container { max-width: 850px; margin: auto; background: #151515; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #222; position: relative; }
+        .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; cursor: pointer; font-size: 1.3em; z-index: 100; }
+        .lang-bar span { opacity: 0.3; transition: 0.3s; }
+        .lang-bar span.active { opacity: 1; transform: scale(1.2); }
         canvas { width: 100%; height: 160px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; }
         .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
         .input-group { background: #222; padding: 8px; border-radius: 10px; flex: 1; min-width: 80px; }
-        input[type="number"] { background: #111; border: 1px solid #444; color: #00ff95; padding: 8px; width: 100%; box-sizing: border-box; text-align: center; }
+        input[type="number"] { background: #111; border: 1px solid #444; color: #00ff95; padding: 8px; border-radius: 5px; width: 100%; box-sizing: border-box; text-align: center; font-size: 1.1em; }
         .presets { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-        .btn-preset { background: #222; color: #bbb; border: 1px solid #333; padding: 10px; border-radius: 15px; cursor: pointer; flex: 1 1 30%; }
+        .btn-preset { background: #222; color: #bbb; border: 1px solid #333; padding: 10px 12px; border-radius: 15px; cursor: pointer; font-size: 0.8em; flex: 1 1 30%; }
         .btn-row { width: 100%; display: flex; gap: 10px; margin-top: 10px; }
-        button.main-btn { flex: 1; padding: 15px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; }
-        .btn-start { background: #27ae60; color: white; }
-        .btn-stop { background: #c0392b; color: white; }
+        button.main-btn { flex: 1; padding: 15px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; text-transform: uppercase; font-size: 1em; }
+        .btn-start { background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; }
+        .btn-stop { background: linear-gradient(135deg, #c0392b, #e74c3c); color: white; }
+        .volume-panel { margin: 20px 0; color: #888; }
+        input[type="range"] { width: 80%; accent-color: #27ae60; }
+        .info-table { width: 100%; margin-top: 20px; border-collapse: collapse; background: #111; border-radius: 10px; font-size: 0.8em; }
+        .info-table td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .diff-display { font-size: 1.8em; color: #00ff95; font-weight: bold; margin: 10px 0; }
-        #swapBtn { background: #ff4400; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        #swapBtn { background: #ff4400; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8em; font-weight: bold; transition: 0.3s; margin: 10px 0; width: 100%; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Binaural Lab 🎧</h1>
+    <div class="lang-bar">
+        <span id="b-cs" class="active" onclick="changeLang('cs')">🇨🇿</span>
+        <span id="b-en" onclick="changeLang('en')">🇬🇧</span>
+        <span id="b-de" onclick="changeLang('de')">🇩🇪</span>
+        <span id="b-es" onclick="changeLang('es')">🇪🇸</span>
+        <span id="b-fr" onclick="changeLang('fr')">🇫🇷</span>
+    </div>
+    <h1 id="txt-title">Binaural Lab 🎧</h1>
     <div class="presets">
-        <button class="btn-preset" onclick="setPreset(100, 101.5, 'relax')">🌙 Spánek</button>
-        <button class="btn-preset" onclick="setPreset(200, 206, 'relax')">🧘 Meditace</button>
-        <button class="btn-preset" onclick="setPreset(300, 310, 'relax')">🎨 Relax</button>
-        <button class="btn-preset" onclick="setPreset(400, 420, 'energy')">🧠 Fokus</button>
-        <button class="btn-preset" onclick="setPreset(200, 240, 'energy')">⚡ Výkon</button>
+        <button class="btn-preset" onclick="setPreset(100, 101.5, 'relax')"><span id="p1">🌙 Spánek</span></button>
+        <button class="btn-preset" onclick="setPreset(200, 206, 'relax')"><span id="p2">🧘 Meditace</span></button>
+        <button class="btn-preset" onclick="setPreset(300, 310, 'relax')"><span id="p3">🎨 Relax</span></button>
+        <button class="btn-preset" onclick="setPreset(400, 420, 'energy')"><span id="p4">🧠 Fokus</span></button>
+        <button class="btn-preset" onclick="setPreset(200, 240, 'energy')"><span id="p5">⚡ Výkon</span></button>
     </div>
     <div class="controls">
-        <div class="input-group"><input type="number" id="leftFreq" value="200" oninput="updateDiff(); updateSwapStatus();"></div>
-        <div class="input-group"><input type="number" id="rightFreq" value="240" oninput="updateDiff(); updateSwapStatus();"></div>
+        <div class="input-group"><label id="txt-l" style="display:block; font-size:0.6em; color:#888;">L (Hz)</label><input type="number" id="leftFreq" value="200" oninput="updateDiff(); updateSwapStatus();"></div>
+        <div class="input-group"><label id="txt-r" style="display:block; font-size:0.6em; color:#888;">P (Hz)</label><input type="number" id="rightFreq" value="240" oninput="updateDiff(); updateSwapStatus();"></div>
         <button id="swapBtn" onclick="swapChannels()">MODE: ENERGY (L>R)</button>
         <div class="btn-row">
-            <button class="main-btn btn-start" onclick="start()">Start</button>
-            <button class="main-btn btn-stop" onclick="stop()">Stop</button>
+            <button class="main-btn btn-start" id="txt-start" onclick="start()">Start</button>
+            <button class="main-btn btn-stop" id="txt-stop" onclick="stop()">Stop</button>
         </div>
     </div>
     <div class="diff-display" id="diffVal">40.0 Hz</div>
-    <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" style="width:80%" oninput="updateVolume()">
+    <div class="volume-panel"><input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" oninput="updateVolume()"></div>
     <canvas id="visual"></canvas>
+    <div style="color: #f1c40f; font-size: 0.7em; margin-bottom: 20px;" id="txt-sony">✨ Sony WH-1000XM5 Active</div>
+    <table class="info-table" id="table-content"></table>
 </div>
-
 <script>
-let audioCtx, leftOsc, rightOsc, gainNode, animationId;
-
+let audioCtx, leftOsc, rightOsc, gainNode, animationId, curLang = 'cs';
+const trans = {
+    cs: { title: "Binaural Lab 🎧", p1: "🌙 Spánek", p2: "🧘 Meditace", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Výkon", l: "Levé (Hz)", r: "Pravé (Hz)", start: "Start", stop: "Stop", sony: "✨ Sony WH-1000XM5 Mode Active", rows: [["Delta","0.5–4Hz","Spánek"],["Theta","4–8Hz","Meditace"],["Alpha","8–13Hz","Klid"],["Beta","13–30Hz","Fokus"]] },
+    en: { title: "Binaural Lab 🎧", p1: "🌙 Sleep", p2: "🧘 Meditate", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Power", l: "Left (Hz)", r: "Right (Hz)", start: "Start", stop: "Stop", sony: "✨ Sony WH-1000XM5 Optimized", rows: [["Delta","0.5–4Hz","Sleep"],["Theta","4–8Hz","Meditate"],["Alpha","8–13Hz","Calm"],["Beta","13–30Hz","Focus"]] },
+    de: { title: "Binaural Lab 🎧", p1: "🌙 Schlaf", p2: "🧘 Meditat.", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Leistung", l: "Links", r: "Rechts", start: "Start", stop: "Stopp", sony: "✨ Sony WH-1000XM5 Aktiv", rows: [["Delta","0.5–4Hz","Schlaf"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Ruhe"],["Beta","13–30Hz","Fokus"]] },
+    es: { title: "Binaural Lab 🎧", p1: "🌙 Sueño", p2: "🧘 Meditar", p3: "🎨 Relax", p4: "🧠 Enfoque", p5: "⚡ Poder", l: "Izq", r: "Der", start: "Iniciar", stop: "Parar", sony: "✨ Sony WH-1000XM5 Activo", rows: [["Delta","0.5–4Hz","Sueño"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Calma"],["Beta","13–30Hz","Enfoque"]] },
+    fr: { title: "Binaural Lab 🎧", p1: "🌙 Sommeil", p2: "🧘 Méditer", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Énergie", l: "Gauche", r: "Droite", start: "Lancer", stop: "Arrêter", sony: "✨ Sony WH-1000XM5 Activé", rows: [["Delta","0.5–4Hz","Sommeil"],["Theta","4–8Hz","Méditer"],["Alpha","8–13Hz","Calme"],["Beta","13–30Hz","Focus"]] }
+};
+function changeLang(lang) {
+    curLang = lang; const t = trans[lang];
+    document.getElementById('txt-title').innerText = t.title;
+    ['p1','p2','p3','p4','p5'].forEach(id => document.getElementById(id).innerText = t[id]);
+    document.getElementById('txt-start').innerText = t.start; document.getElementById('txt-stop').innerText = t.stop;
+    document.getElementById('txt-sony').innerText = t.sony;
+    document.getElementById('table-content').innerHTML = t.rows.map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    document.querySelectorAll('.lang-bar span').forEach(s => s.classList.remove('active'));
+    document.getElementById('b-' + lang).classList.add('active'); updateDiff();
+}
 function updateDiff() {
     const f1 = parseFloat(document.getElementById("leftFreq").value) || 0;
     const f2 = parseFloat(document.getElementById("rightFreq").value) || 0;
     document.getElementById("diffVal").innerText = `${Math.abs(f1 - f2).toFixed(1)} Hz`;
 }
-
+function updateSwapStatus() {
+    let l = parseFloat(document.getElementById('leftFreq').value);
+    let r = parseFloat(document.getElementById('rightFreq').value);
+    let btn = document.getElementById('swapBtn');
+    if (l > r) { btn.innerText = "MODE: ENERGY (L>R)"; btn.style.backgroundColor = "#ff4400"; }
+    else if (r > l) { btn.innerText = "MODE: RELAX (R>L)"; btn.style.backgroundColor = "#3498db"; }
+    else { btn.innerText = "MODE: BALANCED"; btn.style.backgroundColor = "#444"; }
+}
+function setPreset(f1, f2, mode) {
+    let high = Math.max(f1, f2), low = Math.min(f1, f2);
+    if (mode === 'energy') { document.getElementById("leftFreq").value = high; document.getElementById("rightFreq").value = low; }
+    else { document.getElementById("leftFreq").value = low; document.getElementById("rightFreq").value = high; }
+    updateDiff(); updateSwapStatus(); if(audioCtx) start();
+}
+function swapChannels() {
+    let l = document.getElementById('leftFreq'), r = document.getElementById('rightFreq');
+    let temp = l.value; l.value = r.value; r.value = temp;
+    updateDiff(); updateSwapStatus(); if(audioCtx) start();
+}
 function updateVolume() { if (gainNode) gainNode.gain.setTargetAtTime(document.getElementById("volume").value, audioCtx.currentTime, 0.05); }
-
 function start() {
     if (audioCtx) stop();
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     gainNode = audioCtx.createGain(); gainNode.gain.value = document.getElementById("volume").value;
-    const f1 = parseFloat(document.getElementById("leftFreq").value);
-    const f2 = parseFloat(document.getElementById("rightFreq").value);
+    const f1 = parseFloat(document.getElementById("leftFreq").value), f2 = parseFloat(document.getElementById("rightFreq").value);
     leftOsc = audioCtx.createOscillator(); rightOsc = audioCtx.createOscillator();
     const merger = audioCtx.createChannelMerger(2);
     leftOsc.frequency.value = f1; rightOsc.frequency.value = f2;
@@ -69,50 +120,26 @@ function start() {
     merger.connect(gainNode).connect(audioCtx.destination);
     leftOsc.start(); rightOsc.start(); drawWave(f1, f2);
 }
-
 function stop() { if (leftOsc) { leftOsc.stop(); rightOsc.stop(); } if (audioCtx) audioCtx.close(); if (animationId) cancelAnimationFrame(animationId); }
-
 function drawWave(f1, f2) {
-    const canvas = document.getElementById("visual"); const ctx = canvas.getContext("2d");
-    if (animationId) cancelAnimationFrame(animationId);
-    let offset = 0;
+    const canvas = document.getElementById("visual"); const ctx = canvas.getContext("2d"); let offset = 0;
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const render3D = (freqRatio, color, speed) => {
-            for (let x = 0; x < canvas.width; x += 4) {
+        function draw3DWave(freqRatio, color, speed) {
+            for (let x = 0; x < canvas.width; x += 2) {
                 let z = Math.sin((x * 0.02) + offset * speed);
                 let p = (z + 2) / 2;
                 let y = 80 + Math.sin((x * 0.03 * freqRatio) + offset) * (35 * p);
                 ctx.beginPath(); ctx.strokeStyle = color; ctx.globalAlpha = 0.3 + (p - 0.5);
-                ctx.lineWidth = 2 * p; ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.stroke();
+                ctx.lineWidth = 1 * p; ctx.arc(x, y, ctx.lineWidth, 0, Math.PI * 2); ctx.stroke();
             }
-        };
-        render3D(1, "#3498db", 1.2); render3D(f2 / f1, "#e74c3c", 0.8);
+        }
+        draw3DWave(1, "#3498db", 1.2); draw3DWave(f2/f1, "#e74c3c", 0.8);
         offset += 0.05; animationId = requestAnimationFrame(draw);
     }
     draw();
 }
-
-function setPreset(f1, f2, mode) {
-    let high = Math.max(f1, f2); let low = Math.min(f1, f2);
-    if (mode === 'energy') { document.getElementById("leftFreq").value = high; document.getElementById("rightFreq").value = low; }
-    else { document.getElementById("leftFreq").value = low; document.getElementById("rightFreq").value = high; }
-    updateDiff(); updateSwapStatus(); if(audioCtx) start();
-}
-
-function swapChannels() {
-    let l = document.getElementById('leftFreq'); let r = document.getElementById('rightFreq');
-    let temp = l.value; l.value = r.value; r.value = temp;
-    updateDiff(); updateSwapStatus(); if(audioCtx) start();
-}
-
-function updateSwapStatus() {
-    let l = parseFloat(document.getElementById('leftFreq').value) || 0;
-    let r = parseFloat(document.getElementById('rightFreq').value) || 0;
-    let btn = document.getElementById('swapBtn');
-    if (l > r) { btn.innerText = "MODE: ENERGY (L>R)"; btn.style.backgroundColor = "#ff4400"; }
-    else { btn.innerText = "MODE: RELAX (R>L)"; btn.style.backgroundColor = "#3498db"; }
-}
+changeLang('cs');
 updateSwapStatus();
 </script>
 </body>
