@@ -13,7 +13,7 @@
         .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; cursor: pointer; font-size: 1.3em; z-index: 100; }
         .lang-bar span { opacity: 0.3; transition: 0.3s; }
         .lang-bar span.active { opacity: 1; transform: scale(1.2); }
-        canvas { width: 100%; height: 160px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; cursor: pointer; }
+        canvas { width: 100%; height: 100px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; cursor: pointer; }
         .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
         .input-group { background: #222; padding: 8px; border-radius: 10px; flex: 1; min-width: 80px; }
         input[type="number"] { background: #111; border: 1px solid #444; color: #00ff95; padding: 8px; border-radius: 5px; width: 100%; box-sizing: border-box; text-align: center; font-size: 1.1em; }
@@ -155,7 +155,20 @@ function drawWave(f1, f2) {
     let offset = 0
 ;
 function draw() {
-        // Zastavit vykreslování, pokud zvuk nehraje
+    // 1. Zjistíme skutečnou šířku kontejneru na mobilu
+    const containerWidth = canvas.parentElement.clientWidth;
+    
+    // 2. Vynutíme rozměry canvasu, pokud nejsou nastavené
+    if (canvas.width !== containerWidth) {
+        canvas.width = containerWidth;
+        canvas.height = 160; 
+    }
+
+    // 3. Tohle je klíčové: kreslit budeme VŽDY, i když je audioCtx v pauze
+    // (Odstraň nebo zakomentuj tu podmínku: if (!audioCtx || ...) )
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);   
+     // Zastavit vykreslování, pokud zvuk nehraje
         if (!audioCtx || audioCtx.state !== 'running') {
             return; 
         }
