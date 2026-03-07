@@ -29,6 +29,25 @@
         .info-table td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .diff-display { font-size: 1.8em; color: #00ff95; font-weight: bold; margin: 10px 0; }
         #swapBtn { background: #ff4400; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8em; font-weight: bold; transition: 0.3s; margin: 10px 0; width: 100%; }
+        
+        /* FULLSCREEN SPOŘIČ */
+        #visual.fullscreen-visual {
+           position: fixed;
+           top: 0;
+           left: 0;
+           z-index: 9999;
+           background: #000;
+           border: none;
+           border-radius: 0;
+           margin: 0;
+           cursor: pointer;
+           transform: rotate(90deg);
+           transform-origin: center center;
+           width: 100vh; 
+           height: 100vw;
+           top: calc(50vh - 50vw);
+           left: calc(50vw - 50vh);
+        }
     </style>
 </head>
 <body>
@@ -59,12 +78,14 @@
     </div>
     <div class="diff-display" id="diffVal">40.0 Hz</div>
     <div class="volume-panel"><input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" oninput="updateVolume()"></div>
-    <canvas id="visual"></canvas>
+    <canvas id="visual" onclick="toggleFullscreenVisual()"></canvas>
     <div style="color: #f1c40f; font-size: 0.7em; margin-bottom: 20px;" id="txt-sony">✨ Sony WH-1000XM5 Active</div>
     <table class="info-table" id="table-content"></table>
 </div>
+
 <script>
 let audioCtx, leftOsc, rightOsc, gainNode, animationId, curLang = 'cs';
+
 const trans = {
     cs: { title: "Binaural Lab 🎧", p1: "🌙 Spánek", p2: "🧘 Meditace", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Výkon", l: "Levé (Hz)", r: "Pravé (Hz)", start: "Start", stop: "Stop", sony: "✨ Sony WH-1000XM5 Mode Active", rows: [["Delta","0.5–4Hz","Spánek"],["Theta","4–8Hz","Meditace"],["Alpha","8–13Hz","Klid"],["Beta","13–30Hz","Fokus"]] },
     en: { title: "Binaural Lab 🎧", p1: "🌙 Sleep", p2: "🧘 Meditate", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Power", l: "Left (Hz)", r: "Right (Hz)", start: "Start", stop: "Stop", sony: "✨ Sony WH-1000XM5 Optimized", rows: [["Delta","0.5–4Hz","Sleep"],["Theta","4–8Hz","Meditate"],["Alpha","8–13Hz","Calm"],["Beta","13–30Hz","Focus"]] },
@@ -72,6 +93,22 @@ const trans = {
     es: { title: "Binaural Lab 🎧", p1: "🌙 Sueño", p2: "🧘 Meditar", p3: "🎨 Relax", p4: "🧠 Enfoque", p5: "⚡ Poder", l: "Izq", r: "Der", start: "Iniciar", stop: "Parar", sony: "✨ Sony WH-1000XM5 Activo", rows: [["Delta","0.5–4Hz","Sueño"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Calma"],["Beta","13–30Hz","Enfoque"]] },
     fr: { title: "Binaural Lab 🎧", p1: "🌙 Sommeil", p2: "🧘 Méditer", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Énergie", l: "Gauche", r: "Droite", start: "Lancer", stop: "Arrêter", sony: "✨ Sony WH-1000XM5 Activé", rows: [["Delta","0.5–4Hz","Sommeil"],["Theta","4–8Hz","Méditer"],["Alpha","8–13Hz","Calme"],["Beta","13–30Hz","Focus"]] }
 };
+
+function toggleFullscreenVisual() {
+    const canvas = document.getElementById("visual");
+    canvas.classList.toggle('fullscreen-visual');
+    if (canvas.classList.contains('fullscreen-visual')) {
+        if (canvas.requestFullscreen) canvas.requestFullscreen();
+        else if (canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+    const f1 = parseFloat(document.getElementById("leftFreq").value) || 200;
+    const f2 = parseFloat(document.getElementById("rightFreq").value) || 240;
+    drawWave(f1, f2);
+}
+
 function changeLang(lang) {
     curLang = lang; const t = trans[lang];
     document.getElementById('txt-title').innerText = t.title;
@@ -82,11 +119,13 @@ function changeLang(lang) {
     document.querySelectorAll('.lang-bar span').forEach(s => s.classList.remove('active'));
     document.getElementById('b-' + lang).classList.add('active'); updateDiff();
 }
+
 function updateDiff() {
     const f1 = parseFloat(document.getElementById("leftFreq").value) || 0;
     const f2 = parseFloat(document.getElementById("rightFreq").value) || 0;
     document.getElementById("diffVal").innerText = `${Math.abs(f1 - f2).toFixed(1)} Hz`;
 }
+
 function updateSwapStatus() {
     let l = parseFloat(document.getElementById('leftFreq').value);
     let r = parseFloat(document.getElementById('rightFreq').value);
@@ -95,18 +134,22 @@ function updateSwapStatus() {
     else if (r > l) { btn.innerText = "MODE: RELAX (R>L)"; btn.style.backgroundColor = "#3498db"; }
     else { btn.innerText = "MODE: BALANCED"; btn.style.backgroundColor = "#444"; }
 }
+
 function setPreset(f1, f2, mode) {
     let high = Math.max(f1, f2), low = Math.min(f1, f2);
     if (mode === 'energy') { document.getElementById("leftFreq").value = high; document.getElementById("rightFreq").value = low; }
     else { document.getElementById("leftFreq").value = low; document.getElementById("rightFreq").value = high; }
     updateDiff(); updateSwapStatus(); if(audioCtx) start();
 }
+
 function swapChannels() {
     let l = document.getElementById('leftFreq'), r = document.getElementById('rightFreq');
     let temp = l.value; l.value = r.value; r.value = temp;
     updateDiff(); updateSwapStatus(); if(audioCtx) start();
 }
+
 function updateVolume() { if (gainNode) gainNode.gain.setTargetAtTime(document.getElementById("volume").value, audioCtx.currentTime, 0.05); }
+
 function start() {
     if (audioCtx) stop();
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -120,12 +163,12 @@ function start() {
     merger.connect(gainNode).connect(audioCtx.destination);
     leftOsc.start(); rightOsc.start(); drawWave(f1, f2);
 }
+
 function stop() { if (leftOsc) { leftOsc.stop(); rightOsc.stop(); } if (audioCtx) audioCtx.close(); if (animationId) cancelAnimationFrame(animationId); }
+
 function drawWave(f1, f2) {
     const canvas = document.getElementById("visual");
     const ctx = canvas.getContext("2d");
-    
-    // Fix pro iPhone rozlišení
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * (window.devicePixelRatio || 1);
     canvas.height = rect.height * (window.devicePixelRatio || 1);
@@ -137,34 +180,33 @@ function drawWave(f1, f2) {
     function draw() {
         ctx.clearRect(0, 0, rect.width, rect.height);
         
-        // Vykreslení dvou vln (jedna pro každou frekvenci)
         function renderSine(freq, color, op) {
             ctx.beginPath();
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.strokeStyle = color;
             ctx.globalAlpha = op;
+            
+            // NEONOVÁ ZÁŘE
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
 
             for (let x = 0; x < rect.width; x++) {
-                // Tady je ta čistá matematika:
-                // (x * 0.05) určuje hustotu vln na obrazovce
-                // (offset) určuje rychlost pohybu
                 let y = (rect.height / 2) + Math.sin((x * 0.05) + offset * (freq / 100)) * 30;
-                
                 if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.stroke();
+            ctx.shadowBlur = 0; // Reset pro další vlnu
         }
 
-        // Modrá vlna (Levá frekvence)
-        renderSine(f1, "#3498db", 0.8);
-        // Červená vlna (Pravá frekvence)
-        renderSine(f2, "#e74c3c", 0.6);
+        renderSine(f1, "#00f2ff", 0.8); // Neon Cyan
+        renderSine(f2, "#ff0055", 0.7); // Neon Magenta
         
-        offset += 0.1; // Rychlost animace
+        offset += 0.1;
         animationId = requestAnimationFrame(draw);
     }
     draw();
 }
+
 changeLang('cs');
 updateSwapStatus();
 </script>
