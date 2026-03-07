@@ -122,20 +122,43 @@ function start() {
 }
 function stop() { if (leftOsc) { leftOsc.stop(); rightOsc.stop(); } if (audioCtx) audioCtx.close(); if (animationId) cancelAnimationFrame(animationId); }
 function drawWave(f1, f2) {
-    const canvas = document.getElementById("visual"); const ctx = canvas.getContext("2d"); let offset = 0;
+    const canvas = document.getElementById("visual");
+    const ctx = canvas.getContext("2d");
+    
+    // Tady definujeme "virtuální" rozlišení kresby
+    // To zajistí, že vlnovky nebudou obří na velkém monitoru
+    canvas.width = 800; 
+    canvas.height = 160;
+
+    let offset = 0;
+    if (animationId) cancelAnimationFrame(animationId); // Pojistka proti zrychlování
+
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         function draw3DWave(freqRatio, color, speed) {
+            ctx.beginPath();
+            // Kreslíme jen v rozmezí canvas.width (800px)
             for (let x = 0; x < canvas.width; x += 2) {
                 let z = Math.sin((x * 0.02) + offset * speed);
                 let p = (z + 2) / 2;
+                // Výpočet Y s pevnou středovou osou (80px)
                 let y = 80 + Math.sin((x * 0.03 * freqRatio) + offset) * (35 * p);
-                ctx.beginPath(); ctx.strokeStyle = color; ctx.globalAlpha = 0.3 + (p - 0.5);
-                ctx.lineWidth = 1 * p; ctx.arc(x, y, ctx.lineWidth, 0, Math.PI * 2); ctx.stroke();
+                
+                ctx.strokeStyle = color;
+                ctx.globalAlpha = 0.3 + (p - 0.5);
+                ctx.lineWidth = 1.5 * p;
+                
+                if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
+            ctx.stroke();
         }
-        draw3DWave(1, "#3498db", 1.2); draw3DWave(f2/f1, "#e74c3c", 0.8);
-        offset += 0.05; animationId = requestAnimationFrame(draw);
+
+        draw3DWave(1, "#3498db", 1.2);      // Modrá vlna
+        draw3DWave(f2/f1, "#e74c3c", 0.8);  // Červená vlna
+        
+        offset += 0.05;
+        animationId = requestAnimationFrame(draw);
     }
     draw();
 }
