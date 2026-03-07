@@ -13,7 +13,7 @@
         .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; cursor: pointer; font-size: 1.3em; z-index: 100; }
         .lang-bar span { opacity: 0.3; transition: 0.3s; }
         .lang-bar span.active { opacity: 1; transform: scale(1.2); }
-        canvas { width: 100%; height: 100px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; cursor: pointer; }
+        canvas { width: 100%; height: 160px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; }
         .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
         .input-group { background: #222; padding: 8px; border-radius: 10px; flex: 1; min-width: 80px; }
         input[type="number"] { background: #111; border: 1px solid #444; color: #00ff95; padding: 8px; border-radius: 5px; width: 100%; box-sizing: border-box; text-align: center; font-size: 1.1em; }
@@ -72,7 +72,6 @@ const trans = {
     es: { title: "Binaural Lab 🎧", p1: "🌙 Sueño", p2: "🧘 Meditar", p3: "🎨 Relax", p4: "🧠 Enfoque", p5: "⚡ Poder", l: "Izq", r: "Der", start: "Iniciar", stop: "Parar", sony: "✨ Sony WH-1000XM5 Activo", rows: [["Delta","0.5–4Hz","Sueño"],["Theta","4–8Hz","Meditat."],["Alpha","8–13Hz","Calma"],["Beta","13–30Hz","Enfoque"]] },
     fr: { title: "Binaural Lab 🎧", p1: "🌙 Sommeil", p2: "🧘 Méditer", p3: "🎨 Relax", p4: "🧠 Focus", p5: "⚡ Énergie", l: "Gauche", r: "Droite", start: "Lancer", stop: "Arrêter", sony: "✨ Sony WH-1000XM5 Activé", rows: [["Delta","0.5–4Hz","Sommeil"],["Theta","4–8Hz","Méditer"],["Alpha","8–13Hz","Calme"],["Beta","13–30Hz","Focus"]] }
 };
-
 function changeLang(lang) {
     curLang = lang; const t = trans[lang];
     document.getElementById('txt-title').innerText = t.title;
@@ -83,13 +82,11 @@ function changeLang(lang) {
     document.querySelectorAll('.lang-bar span').forEach(s => s.classList.remove('active'));
     document.getElementById('b-' + lang).classList.add('active'); updateDiff();
 }
-
 function updateDiff() {
     const f1 = parseFloat(document.getElementById("leftFreq").value) || 0;
     const f2 = parseFloat(document.getElementById("rightFreq").value) || 0;
     document.getElementById("diffVal").innerText = `${Math.abs(f1 - f2).toFixed(1)} Hz`;
 }
-
 function updateSwapStatus() {
     let l = parseFloat(document.getElementById('leftFreq').value);
     let r = parseFloat(document.getElementById('rightFreq').value);
@@ -98,22 +95,18 @@ function updateSwapStatus() {
     else if (r > l) { btn.innerText = "MODE: RELAX (R>L)"; btn.style.backgroundColor = "#3498db"; }
     else { btn.innerText = "MODE: BALANCED"; btn.style.backgroundColor = "#444"; }
 }
-
 function setPreset(f1, f2, mode) {
     let high = Math.max(f1, f2), low = Math.min(f1, f2);
     if (mode === 'energy') { document.getElementById("leftFreq").value = high; document.getElementById("rightFreq").value = low; }
     else { document.getElementById("leftFreq").value = low; document.getElementById("rightFreq").value = high; }
     updateDiff(); updateSwapStatus(); if(audioCtx) start();
 }
-
 function swapChannels() {
     let l = document.getElementById('leftFreq'), r = document.getElementById('rightFreq');
     let temp = l.value; l.value = r.value; r.value = temp;
     updateDiff(); updateSwapStatus(); if(audioCtx) start();
 }
-
 function updateVolume() { if (gainNode) gainNode.gain.setTargetAtTime(document.getElementById("volume").value, audioCtx.currentTime, 0.05); }
-
 function start() {
     if (audioCtx) stop();
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -127,128 +120,25 @@ function start() {
     merger.connect(gainNode).connect(audioCtx.destination);
     leftOsc.start(); rightOsc.start(); drawWave(f1, f2);
 }
-
-function stop() {
-   if (leftOsc) { 
-        leftOsc.stop(); 
-        rightOsc.stop(); 
-    } 
-    if (audioCtx) {
-        audioCtx.close(); 
-        audioCtx = null; // Důležité pro správný restart
-    }
-    if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null; // Vynulování ID animace
-    }
-    
-    // Volitelně: Vyčistit plátno, aby vlnky úplně zmizely
-    const canvas = document.getElementById("visual");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
- }
-
+function stop() { if (leftOsc) { leftOsc.stop(); rightOsc.stop(); } if (audioCtx) audioCtx.close(); if (animationId) cancelAnimationFrame(animationId); }
 function drawWave(f1, f2) {
-    const canvas = document.getElementById("visual");
-    const ctx = canvas.getContext("2d");
-    if (window.animationId) cancelAnimationFrame(window.animationId);
-    let offset = 0
-;
-function draw() {
-    // 1. Zjistíme skutečnou šířku kontejneru na mobilu
-    const containerWidth = canvas.parentElement.clientWidth;
-    
-    // 2. Vynutíme rozměry canvasu, pokud nejsou nastavené
-    if (canvas.width !== containerWidth) {
-        canvas.width = containerWidth;
-        canvas.height = 160; 
-    }
-
-    // 3. Tohle je klíčové: kreslit budeme VŽDY, i když je audioCtx v pauze
-    // (Odstraň nebo zakomentuj tu podmínku: if (!audioCtx || ...) )
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);   
-     // Zastavit vykreslování, pokud zvuk nehraje
-        if (!audioCtx || audioCtx.state !== 'running') {
-            return; 
-        }
-        // Dynamická velikost podle toho, jestli jsme ve fullscreenu
-        if (document.fullscreenElement) {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        } else {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 160;
-        }
-        
+    const canvas = document.getElementById("visual"); const ctx = canvas.getContext("2d"); let offset = 0;
+    function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         function draw3DWave(freqRatio, color, speed) {
-            let isFull = !!document.fullscreenElement;
-            let limit = isFull ? canvas.height : canvas.width;
-
-            for (let i = 0; i < limit; i += isFull ? 4 : 2) {
-                let z = Math.sin((i * 0.02) + (offset * speed));
+            for (let x = 0; x < canvas.width; x += 2) {
+                let z = Math.sin((x * 0.02) + offset * speed);
                 let p = (z + 2) / 2;
-                
-                // TADY JE TO KROCENÍ:
-                // Ve fullscreenu (isFull) je rozptyl (amp) jen 60 pixelů od středu.
-                let amp = isFull ? 60 * p : 35 * p; 
-                let wave = Math.sin((i * 0.03 * freqRatio) + offset) * amp;
-                
-                // Ve fullscreenu prohodíme osy: x je střed + vlna, y je postup shora dolů
-                let x = isFull ? (canvas.width / 2) + wave : i;
-                let y = isFull ? i : (canvas.height / 2) + wave;
-
-                ctx.beginPath();
-                ctx.strokeStyle = color;
-                ctx.globalAlpha = 0.3 + (p - 0.5);
-                ctx.lineWidth = (isFull ? 3 : 1) * p;
-                ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2);
-                ctx.stroke();
+                let y = 80 + Math.sin((x * 0.03 * freqRatio) + offset) * (35 * p);
+                ctx.beginPath(); ctx.strokeStyle = color; ctx.globalAlpha = 0.3 + (p - 0.5);
+                ctx.lineWidth = 1 * p; ctx.arc(x, y, ctx.lineWidth, 0, Math.PI * 2); ctx.stroke();
             }
         }
-
-        draw3DWave(1, "#3498db", 1.1); 
-        draw3DWave(f2 / f1, "#e74c3c", 0.7);
-        
-        offset += 0.04;
-        window.animationId = requestAnimationFrame(draw);
+        draw3DWave(1, "#3498db", 1.2); draw3DWave(f2/f1, "#e74c3c", 0.8);
+        offset += 0.05; animationId = requestAnimationFrame(draw);
     }
     draw();
 }
-
-document.getElementById("visual").addEventListener("click", function() {
-    if (!document.fullscreenElement) {
-        if (this.requestFullscreen) { this.requestFullscreen(); }
-        else if (this.webkitRequestFullscreen) { this.webkitRequestFullscreen(); }
-    } else {
-        document.exitFullscreen();
-    }
-});
-let idleTime = 0;
-
-function resetTimer() { 
-    idleTime = 0; 
-}
-
-// Sledování aktivity pro resetování času
-window.onmousemove = resetTimer; 
-window.onkeydown = resetTimer;
-window.onclick = resetTimer;
-
-// Kontrola nečinnosti každou sekundu
-setInterval(() => {
-    // Časovač běží jen když hraje zvuk
-    if (audioCtx && audioCtx.state === 'running') {
-        idleTime++;
-        // Pokud uplyne 30s a nejsme ve fullscreenu, zapneme ho
-        if (idleTime >= 10 && !document.fullscreenElement) {
-            const v = document.getElementById("visual");
-            if (v.requestFullscreen) v.requestFullscreen();
-        }
-    }
-}, 1000);
 changeLang('cs');
 updateSwapStatus();
 </script>
