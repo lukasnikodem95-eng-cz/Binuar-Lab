@@ -13,7 +13,7 @@
         .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; cursor: pointer; font-size: 1.3em; z-index: 100; }
         .lang-bar span { opacity: 0.3; transition: 0.3s; }
         .lang-bar span.active { opacity: 1; transform: scale(1.2); }
-        canvas { width: 100%; height: 160px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; }
+        canvas { width: 100%; height: 160px; background: #000; border-radius: 12px; margin: 15px 0; border: 1px solid #333; cursor: pointer; }
         .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
         .input-group { background: #222; padding: 8px; border-radius: 10px; flex: 1; min-width: 80px; }
         input[type="number"] { background: #111; border: 1px solid #444; color: #00ff95; padding: 8px; border-radius: 5px; width: 100%; box-sizing: border-box; text-align: center; font-size: 1.1em; }
@@ -30,23 +30,37 @@
         .diff-display { font-size: 1.8em; color: #00ff95; font-weight: bold; margin: 10px 0; }
         #swapBtn { background: #ff4400; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8em; font-weight: bold; transition: 0.3s; margin: 10px 0; width: 100%; }
         
-        /* FULLSCREEN SPOŘIČ */
+        /* FULLSCREEN REŽIM */
         #visual.fullscreen-visual {
            position: fixed;
-           top: 0;
-           left: 0;
            z-index: 9999;
            background: #000;
            border: none;
            border-radius: 0;
            margin: 0;
-           cursor: pointer;
-           transform: rotate(90deg);
-           transform-origin: center center;
-           width: 100vh; 
-           height: 100vw;
-           top: calc(50vh - 50vw);
-           left: calc(50vw - 50vh);
+        }
+
+        /* Mobil (na výšku) -> Otočíme o 90° pro svislý spořič */
+        @media (orientation: portrait) {
+            #visual.fullscreen-visual {
+                transform: rotate(90deg);
+                transform-origin: center center;
+                width: 100vh; 
+                height: 100vw;
+                top: calc(50vh - 50vw);
+                left: calc(50vw - 50vh);
+            }
+        }
+
+        /* Notebook / Mobil na šířku -> Necháme vodorovně */
+        @media (orientation: landscape) {
+            #visual.fullscreen-visual {
+                transform: none;
+                width: 100vw;
+                height: 100vh;
+                top: 0;
+                left: 0;
+            }
         }
     </style>
 </head>
@@ -97,6 +111,7 @@ const trans = {
 function toggleFullscreenVisual() {
     const canvas = document.getElementById("visual");
     canvas.classList.toggle('fullscreen-visual');
+    
     if (canvas.classList.contains('fullscreen-visual')) {
         if (canvas.requestFullscreen) canvas.requestFullscreen();
         else if (canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
@@ -104,9 +119,12 @@ function toggleFullscreenVisual() {
         if (document.exitFullscreen) document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
     }
-    const f1 = parseFloat(document.getElementById("leftFreq").value) || 200;
-    const f2 = parseFloat(document.getElementById("rightFreq").value) || 240;
-    drawWave(f1, f2);
+
+    setTimeout(() => {
+        const f1 = parseFloat(document.getElementById("leftFreq").value) || 200;
+        const f2 = parseFloat(document.getElementById("rightFreq").value) || 240;
+        drawWave(f1, f2);
+    }, 150);
 }
 
 function changeLang(lang) {
@@ -170,9 +188,11 @@ function drawWave(f1, f2) {
     const canvas = document.getElementById("visual");
     const ctx = canvas.getContext("2d");
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * (window.devicePixelRatio || 1);
-    canvas.height = rect.height * (window.devicePixelRatio || 1);
-    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    const dpr = window.devicePixelRatio || 1;
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
 
     let offset = 0;
     if (animationId) cancelAnimationFrame(animationId);
@@ -186,20 +206,20 @@ function drawWave(f1, f2) {
             ctx.strokeStyle = color;
             ctx.globalAlpha = op;
             
-            // NEONOVÁ ZÁŘE
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 20;
             ctx.shadowColor = color;
 
             for (let x = 0; x < rect.width; x++) {
+                // Vytuněné hodnoty: hustota 0.03 a amplituda 60
                 let y = (rect.height / 2) + Math.sin((x * 0.03) + offset * (freq / 100)) * 60;
                 if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.stroke();
-            ctx.shadowBlur = 0; // Reset pro další vlnu
+            ctx.shadowBlur = 0;
         }
 
-        renderSine(f1, "#00f2ff", 0.8); // Neon Cyan
-        renderSine(f2, "#ff0055", 0.7); // Neon Magenta
+        renderSine(f1, "#00f2ff", 0.8);
+        renderSine(f2, "#ff003c", 0.7);
         
         offset += 0.1;
         animationId = requestAnimationFrame(draw);
