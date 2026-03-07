@@ -191,7 +191,7 @@ function drawWave(f1, f2) {
             ctx.shadowColor = color;
 
             for (let x = 0; x < rect.width; x++) {
-                let y = (rect.height / 2) + Math.sin((x * 0.05) + offset * (freq / 100)) * 30;
+                let y = (rect.height / 2) + Math.sin((x * 0.03) + offset * (freq / 100)) * 60;
                 if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.stroke();
