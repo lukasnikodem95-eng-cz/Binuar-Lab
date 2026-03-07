@@ -125,39 +125,42 @@ function drawWave(f1, f2) {
     const canvas = document.getElementById("visual");
     const ctx = canvas.getContext("2d");
     
-    // Tady definujeme "virtuální" rozlišení kresby
-    // To zajistí, že vlnovky nebudou obří na velkém monitoru
-    canvas.width = 800; 
-    canvas.height = 160;
+    // Fix pro iPhone rozlišení
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * (window.devicePixelRatio || 1);
+    canvas.height = rect.height * (window.devicePixelRatio || 1);
+    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
 
     let offset = 0;
-    if (animationId) cancelAnimationFrame(animationId); // Pojistka proti zrychlování
+    if (animationId) cancelAnimationFrame(animationId);
 
     function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, rect.width, rect.height);
         
-        function draw3DWave(freqRatio, color, speed) {
+        // Vykreslení dvou vln (jedna pro každou frekvenci)
+        function renderSine(freq, color, op) {
             ctx.beginPath();
-            // Kreslíme jen v rozmezí canvas.width (800px)
-            for (let x = 0; x < canvas.width; x += 2) {
-                let z = Math.sin((x * 0.02) + offset * speed);
-                let p = (z + 2) / 2;
-                // Výpočet Y s pevnou středovou osou (80px)
-                let y = 80 + Math.sin((x * 0.03 * freqRatio) + offset) * (35 * p);
-                
-                ctx.strokeStyle = color;
-                ctx.globalAlpha = 0.3 + (p - 0.5);
-                ctx.lineWidth = 1.5 * p;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = op;
+
+            for (let x = 0; x < rect.width; x++) {
+                // Tady je ta čistá matematika:
+                // (x * 0.05) určuje hustotu vln na obrazovce
+                // (offset) určuje rychlost pohybu
+                let y = (rect.height / 2) + Math.sin((x * 0.05) + offset * (freq / 100)) * 30;
                 
                 if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.stroke();
         }
 
-        draw3DWave(1, "#3498db", 1.2);      // Modrá vlna
-        draw3DWave(f2/f1, "#e74c3c", 0.8);  // Červená vlna
+        // Modrá vlna (Levá frekvence)
+        renderSine(f1, "#3498db", 0.8);
+        // Červená vlna (Pravá frekvence)
+        renderSine(f2, "#e74c3c", 0.6);
         
-        offset += 0.05;
+        offset += 0.1; // Rychlost animace
         animationId = requestAnimationFrame(draw);
     }
     draw();
