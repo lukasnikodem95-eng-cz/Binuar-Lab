@@ -17,7 +17,47 @@
         
         h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 5px; font-size: 1.8em; }
 
-        .pad-wrap { width: 100%; height: 450px; margin: 15px 0; position: relative; }
+        .lab-main-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            height: 450px;
+        }
+
+        .v-slider-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            width: 40px;
+        }
+
+        .v-slider {
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 12px;
+            height: 100%;
+            accent-color: #ff9900;
+            cursor: pointer;
+            background: #111;
+            border-radius: 10px;
+        }
+
+        .v-label {
+            font-size: 0.6em;
+            color: #444;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            writing-mode: vertical-lr;
+            transform: rotate(180deg);
+            white-space: nowrap;
+        }
+
+        .pad-wrap { flex-grow: 1; height: 100%; position: relative; max-width: 800px; }
+        
         #xy-pad {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; cursor: crosshair; touch-action: none; overflow: hidden;
@@ -32,16 +72,16 @@
         .stat-box:focus-within { border-color: #ff9900; box-shadow: 0 0 10px rgba(255, 153, 0, 0.2); }
         .stat-box label { display: block; font-size: 0.7em; color: #555; margin-bottom: 2px; text-transform: uppercase; pointer-events: none; }
         
-        /* Styl pro vpisování hodnot */
         .stat-input {
             background: transparent; border: none; color: #ff9900; font-size: 1.4em; 
             font-weight: bold; width: 100%; text-align: center; outline: none; font-family: inherit;
         }
 
-        .mixer-section { background: #111; padding: 20px; border-radius: 25px; border: 1px solid #222; margin-top: 10px; }
-        input[type="range"].mixer-fader { width: 100%; accent-color: #ff9900; height: 10px; margin: 10px 0; }
-        
         .btn-start { background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; width: 100%; cursor: pointer; font-size: 1.1em; margin-top: 10px; }
+
+        @media (max-width: 600px) {
+            .lab-main-row { height: 350px; }
+        }
     </style>
 </head>
 <body>
@@ -58,10 +98,22 @@
 
     <h1 id="txt-title">TINNITUS LAB 🔬</h1>
 
-    <div class="pad-wrap">
-        <div id="xy-pad">
-            <canvas id="noiseCanvas"></canvas>
-            <div id="xy-cursor" style="left: 50%; top: 50%;"></div>
+    <div class="lab-main-row">
+        <div class="v-slider-wrap">
+            <span class="v-label" id="mix-l">BINAURAL</span>
+            <input type="range" id="vol-bin" class="v-slider" min="0" max="1" step="0.01" value="0.4" oninput="updateVolumes()">
+        </div>
+
+        <div class="pad-wrap">
+            <div id="xy-pad">
+                <canvas id="noiseCanvas"></canvas>
+                <div id="xy-cursor" style="left: 50%; top: 50%;"></div>
+            </div>
+        </div>
+
+        <div class="v-slider-wrap">
+            <span class="v-label" id="mix-r">ŠUM</span>
+            <input type="range" id="vol-noise" class="v-slider" min="0" max="1" step="0.01" value="0.4" oninput="updateVolumes()">
         </div>
     </div>
 
@@ -76,25 +128,20 @@
         </div>
     </div>
 
-    <div class="mixer-section">
-        <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: #444; font-weight: bold;">
-            <span id="mix-l">TÓN</span>
-            <span>MIXER</span>
-            <span id="mix-r">ŠUM</span>
-        </div>
-        <input type="range" id="mixer" class="mixer-fader" min="0" max="1" step="0.01" value="0.5" oninput="updateMix()">
-    </div>
-
     <button class="btn-start" id="btn-start" onclick="start()">SPUSTIT TERAPII</button>
 </div>
 
 <script>
+// Rozsah frekvence Binaural nyní nastaven na 40 - 400 Hz
+const MIN_FREQ = 40;
+const MAX_FREQ = 400;
+
 const texts = {
-    cs: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtr (Hz)", start: "SPUSTIT TERAPII", stop: "ZASTAVIT" },
-    en: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "START THERAPY", stop: "STOP" },
-    de: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "THERAPIE STARTEN", stop: "STOPP" },
-    es: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtro (Hz)", start: "INICIAR TERAPIA", stop: "PARAR" },
-    fr: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtre (Hz)", start: "LANCER LA THÉRAPIE", stop: "ARRÊTER" }
+    cs: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtr (Hz)", start: "SPUSTIT TERAPII", stop: "ZASTAVIT", l: "BINAURAL", r: "ŠUM" },
+    en: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "START THERAPY", stop: "STOP", l: "BINAURAL", r: "NOISE" },
+    de: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "THERAPIE STARTEN", stop: "STOPP", l: "BINAURAL", r: "RAUSCHEN" },
+    es: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtro (Hz)", start: "INICIAR TERAPIA", stop: "PARAR", l: "BINAURAL", r: "RUIDO" },
+    fr: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtre (Hz)", start: "LANCER LA THÉRAPIE", stop: "ARRÊTER", l: "BINAURAL", r: "BRUIT" }
 };
 
 function changeLang(lang) {
@@ -103,6 +150,8 @@ function changeLang(lang) {
     document.getElementById('txt-title').innerText = texts[lang].title;
     document.getElementById('lbl-bin').innerText = texts[lang].bin;
     document.getElementById('lbl-fil').innerText = texts[lang].fil;
+    document.getElementById('mix-l').innerText = texts[lang].l;
+    document.getElementById('mix-r').innerText = texts[lang].r;
     document.getElementById('btn-start').innerText = isPlaying ? texts[lang].stop : texts[lang].start;
 }
 
@@ -140,23 +189,20 @@ function animate() {
 }
 animate();
 
-// Funkce pro ruční zadání hodnoty
 function manualUpdate() {
-    let freq = parseFloat(document.getElementById('input-bin').value) || 40;
+    let freq = parseFloat(document.getElementById('input-bin').value) || MIN_FREQ;
     let fil = parseFloat(document.getElementById('input-filter').value) || 1000;
     
-    // Zpětný výpočet pozice kuličky (X, Y) aby odpovídala zadaným číslům
-    mouseX = (freq - 40) / 160;
+    // Přepočet X pozice podle nového rozsahu 40-400
+    mouseX = (freq - MIN_FREQ) / (MAX_FREQ - MIN_FREQ);
     mouseY = 1 - (Math.log(fil / 1000) / Math.log(16000 / 1000));
     
-    // Omezení rozsahu
     mouseX = Math.max(0, Math.min(1, mouseX));
     mouseY = Math.max(0, Math.min(1, mouseY));
     
     document.getElementById('xy-cursor').style.left = (mouseX * 100) + '%';
     document.getElementById('xy-cursor').style.top = (mouseY * 100) + '%';
-    
-    if (isPlaying) updateAudio(mouseX, mouseY, false); // false = neaktualizovat inputy znovu
+    if (isPlaying) updateAudio(mouseX, mouseY, false);
 }
 
 function handleMove(e) {
@@ -176,7 +222,8 @@ document.getElementById('xy-pad').addEventListener('touchstart', (e) => { e.prev
 document.getElementById('xy-pad').addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
 
 function updateAudio(x, y, updateInputs) {
-    const freq = 40 + (x * 160);
+    // Frekvence se teď počítá v rozsahu 40 - 400 Hz
+    const freq = MIN_FREQ + (x * (MAX_FREQ - MIN_FREQ));
     const filterFreq = Math.pow(16000 / 1000, (1 - y)) * 1000;
     
     if(updateInputs) {
@@ -191,11 +238,12 @@ function updateAudio(x, y, updateInputs) {
     }
 }
 
-function updateMix() {
+function updateVolumes() {
     if (!isPlaying) return;
-    const v = document.getElementById('mixer').value;
-    gainBin.gain.setTargetAtTime((1-v)*0.4, audioCtx.currentTime, 0.1);
-    gainNoise.gain.setTargetAtTime(v*0.4, audioCtx.currentTime, 0.1);
+    const vBin = document.getElementById('vol-bin').value;
+    const vNoise = document.getElementById('vol-noise').value;
+    gainBin.gain.setTargetAtTime(vBin * 0.4, audioCtx.currentTime, 0.1);
+    gainNoise.gain.setTargetAtTime(vNoise * 0.4, audioCtx.currentTime, 0.1);
 }
 
 function start() {
@@ -220,7 +268,7 @@ function start() {
     oscL.connect(merger, 0, 0); oscR.connect(merger, 0, 1); merger.connect(gainBin).connect(audioCtx.destination);
     
     noiseNode.start(); oscL.start(); oscR.start();
-    updateMix(); manualUpdate();
+    updateVolumes(); manualUpdate();
 }
 
 function stop() { isPlaying = false; if (audioCtx) audioCtx.close(); document.getElementById('btn-start').innerText = texts[document.querySelector('.lang-bar span.active').id.split('-')[1]].start; }
