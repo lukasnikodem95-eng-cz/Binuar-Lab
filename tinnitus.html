@@ -7,77 +7,73 @@
     <style>
         * { box-sizing: border-box; }
 
-        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 5px; overflow-x: hidden; }
-        .container { max-width: 800px; margin: auto; padding: 10px; position: relative; }
+        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
+        .container { max-width: 950px; margin: auto; padding: 15px; position: relative; }
         
-        .lang-bar { position: absolute; top: 10px; right: 15px; display: flex; gap: 8px; cursor: pointer; z-index: 100; }
-        .lang-bar span { opacity: 0.4; transition: 0.3s; font-size: 1.1em; }
-        .lang-bar span.active { opacity: 1; transform: scale(1.1); }
+        .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 10px; cursor: pointer; z-index: 100; }
+        .lang-bar span { opacity: 0.4; transition: 0.3s; font-size: 1.2em; }
+        .lang-bar span.active { opacity: 1; transform: scale(1.2); }
 
-        .back-btn { position: absolute; top: 10px; left: 15px; color: #444; text-decoration: none; font-size: 1.4em; z-index: 100; }
+        .back-btn { position: absolute; top: 15px; left: 20px; color: #444; text-decoration: none; font-size: 1.5em; z-index: 100; }
         
-        h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 8px; font-size: 1.4em; letter-spacing: 1px; }
+        h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 15px; font-size: 1.8em; letter-spacing: 1px; }
 
-        /* FINÁLNÍ VÝŠKA: 320px */
+        /* OPATRNÉ ZVĚTŠENÍ NA 380px */
         .lab-main-row {
             display: flex; align-items: center; justify-content: center;
-            gap: 10px; margin: 12px 0; height: 320px; 
+            gap: 15px; margin: 20px 0; height: 380px; min-height: 380px;
         }
 
-        .v-slider-wrap { display: flex; flex-direction: column; align-items: center; height: 100%; width: 32px; flex-shrink: 0; }
+        .v-slider-wrap { display: flex; flex-direction: column; align-items: center; height: 100%; width: 45px; flex-shrink: 0; }
         .v-slider {
             -webkit-appearance: slider-vertical; appearance: slider-vertical;
-            width: 9px; height: 100%; accent-color: #ff9900; cursor: pointer;
-            background: #111; border-radius: 8px;
+            width: 13px; height: 100%; accent-color: #ff9900; cursor: pointer;
+            background: #111; border-radius: 10px;
         }
 
         .v-label {
-            font-size: 0.55em; color: #555; font-weight: bold; margin-bottom: 5px;
+            font-size: 0.65em; color: #555; font-weight: bold; margin-bottom: 8px;
             text-transform: uppercase; writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap;
         }
 
-        .pad-wrap { flex-grow: 1; height: 100%; position: relative; max-width: 600px; }
+        .pad-wrap { flex-grow: 1; height: 100%; position: relative; max-width: 700px; }
         
         #xy-pad {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; cursor: crosshair; touch-action: none; overflow: hidden;
-            border: 2px solid #222; border-radius: 18px; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            border: 2px solid #222; border-radius: 25px; box-shadow: 0 0 25px rgba(0,0,0,0.6);
         }
 
-        /* Otazník - o 2px menší */
         .help-btn-in {
             position: absolute; 
-            top: 15px; right: 15px; 
-            background: rgba(0,0,0,0.4); border: 1px solid rgba(255, 153, 0, 0.2); color: #ff9900;
-            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+            top: 20px; right: 20px; 
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255, 153, 0, 0.4); color: #ff9900;
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
             font-weight: bold; z-index: 100; transition: 0.3s; display: flex; align-items: center; justify-content: center;
-            font-size: 0.95em;
+            font-size: 1.1em;
         }
 
-        /* Kulička - o 2px menší */
-        #xy-cursor { width: 18px; height: 18px; border-radius: 50%; position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; border: 2px solid #fff; }
+        #xy-cursor { width: 24px; height: 24px; border-radius: 50%; position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; border: 2.5px solid #fff; }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px auto; max-width: 450px; }
-        .stat-box { background: #151515; padding: 8px; border-radius: 12px; border: 1px solid #222; }
-        .stat-box label { display: block; font-size: 0.6em; color: #444; margin-bottom: 3px; text-transform: uppercase; }
-        .stat-input { background: transparent; border: none; color: #ff9900; font-size: 1.2em; font-weight: bold; width: 100%; text-align: center; outline: none; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px auto; max-width: 500px; }
+        .stat-box { background: #151515; padding: 14px; border-radius: 18px; border: 1px solid #222; }
+        .stat-box label { display: block; font-size: 0.75em; color: #555; margin-bottom: 5px; text-transform: uppercase; }
+        .stat-input { background: transparent; border: none; color: #ff9900; font-size: 1.4em; font-weight: bold; width: 100%; text-align: center; outline: none; }
 
         .btn-start { 
             background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; 
-            padding: 14px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; 
-            font-size: 0.95em; margin-top: 8px;
+            padding: 18px; border-radius: 16px; font-weight: bold; width: 100%; cursor: pointer; 
+            font-size: 1.1em; margin-top: 10px; box-shadow: 0 5px 15px rgba(255, 102, 0, 0.2);
         }
 
         @media (max-width: 600px) {
-            .lab-main-row { height: 280px; gap: 6px; }
-            h1 { font-size: 1.2em; }
+            .lab-main-row { height: 320px; min-height: 320px; }
+            h1 { font-size: 1.4em; }
         }
 
         .help-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-        .help-content { background: #111; padding: 25px; border-radius: 20px; border: 1px solid #444; max-width: 450px; text-align: left; position: relative; }
-        .help-content h2 { color: #ff9900; margin-top: 0; font-size: 1.5em; }
-        .help-content ul { padding-left: 20px; color: #bbb; line-height: 1.6; list-style: square; font-size: 0.95em; }
-        .close-help { position: absolute; top: 12px; right: 20px; font-size: 1.8em; cursor: pointer; color: #444; }
+        .help-content { background: #111; padding: 30px; border-radius: 25px; border: 1px solid #444; max-width: 500px; text-align: left; position: relative; }
+        .close-help { position: absolute; top: 15px; right: 20px; font-size: 1.5em; cursor: pointer; color: #444; }
         canvas#noiseCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     </style>
 </head>
@@ -135,7 +131,7 @@
 </div>
 
 <script>
-/* (JavaScript zůstává stejný a plně funkční) */
+/* JS zůstává stabilní */
 const MIN_FREQ = 40; const MAX_FREQ = 400;
 const texts = { cs: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtr (Hz)", start: "SPUSTIT TERAPII", stop: "ZASTAVIT", l: "BINAURAL", r: "ŠUM", h_t: "Manuál Laboratoře 🔬" }, en: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "START THERAPY", stop: "STOP", l: "BINAURAL", r: "NOISE", h_t: "Lab Manual 🔬" } };
 function changeLang(lang) { document.querySelectorAll('.lang-bar span').forEach(s => s.classList.remove('active')); document.getElementById('b-' + lang).classList.add('active'); const t = texts[lang] || texts['en']; document.getElementById('txt-title').innerText = t.title; document.getElementById('lbl-bin').innerText = t.bin; document.getElementById('lbl-fil').innerText = t.fil; document.getElementById('mix-l').innerText = t.l; document.getElementById('mix-r').innerText = t.r; document.getElementById('h-title').innerText = t.h_t; document.getElementById('btn-start').innerText = isPlaying ? t.stop : t.start; resize(); }
