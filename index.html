@@ -30,38 +30,9 @@
         .diff-display { font-size: 1.8em; color: #00ff95; font-weight: bold; margin: 10px 0; }
         #swapBtn { background: #ff4400; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8em; font-weight: bold; transition: 0.3s; margin: 10px 0; width: 100%; }
         
-        /* FULLSCREEN REŽIM */
-        #visual.fullscreen-visual {
-           position: fixed;
-           z-index: 9999;
-           background: #000;
-           border: none;
-           border-radius: 0;
-           margin: 0;
-        }
-
-        /* Mobil (na výšku) -> Otočíme o 90° pro svislý spořič */
-        @media (orientation: portrait) {
-            #visual.fullscreen-visual {
-                transform: rotate(90deg);
-                transform-origin: center center;
-                width: 100vh; 
-                height: 100vw;
-                top: calc(50vh - 50vw);
-                left: calc(50vw - 50vh);
-            }
-        }
-
-        /* Notebook / Mobil na šířku -> Necháme vodorovně */
-        @media (orientation: landscape) {
-            #visual.fullscreen-visual {
-                transform: none;
-                width: 100vw;
-                height: 100vh;
-                top: 0;
-                left: 0;
-            }
-        }
+        #visual.fullscreen-visual { position: fixed; z-index: 9999; background: #000; border: none; border-radius: 0; margin: 0; }
+        @media (orientation: portrait) { #visual.fullscreen-visual { transform: rotate(90deg); transform-origin: center center; width: 100vh; height: 100vw; top: calc(50vh - 50vw); left: calc(50vw - 50vh); } }
+        @media (orientation: landscape) { #visual.fullscreen-visual { transform: none; width: 100vw; height: 100vh; top: 0; left: 0; } }
     </style>
 </head>
 <body>
@@ -98,7 +69,7 @@
 </div>
 
 <script>
-let audioCtx, leftOsc, rightOsc, gainNode, animationId, curLang = 'cs';
+let audioCtx, leftOsc, rightOsc, gainNode, animationId, curLang = 'cs', isPlaying = false; // HLÍDAČ ZVUKU
 
 const trans = {
     cs: { title: "Binaural Lab 🎧", p1: "🌙 Spánek", p2: "🧘 Meditace", p3: "🎨 Relax", p4: "🧠 Fokus", p5: "⚡ Výkon", l: "Levé (Hz)", r: "Pravé (Hz)", start: "Start", stop: "Stop", sony: "✨ Sony WH-1000XM5 Mode Active", rows: [["Delta","0.5–4Hz","Spánek"],["Theta","4–8Hz","Meditace"],["Alpha","8–13Hz","Klid"],["Beta","13–30Hz","Fokus"]] },
@@ -111,7 +82,6 @@ const trans = {
 function toggleFullscreenVisual() {
     const canvas = document.getElementById("visual");
     canvas.classList.toggle('fullscreen-visual');
-    
     if (canvas.classList.contains('fullscreen-visual')) {
         if (canvas.requestFullscreen) canvas.requestFullscreen();
         else if (canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
@@ -121,9 +91,14 @@ function toggleFullscreenVisual() {
     }
 
     setTimeout(() => {
-        const f1 = parseFloat(document.getElementById("leftFreq").value) || 200;
-        const f2 = parseFloat(document.getElementById("rightFreq").value) || 240;
-        drawWave(f1, f2);
+        if (isPlaying) { // KRESLI JEN KDYŽ HRAJEME
+            const f1 = parseFloat(document.getElementById("leftFreq").value) || 200;
+            const f2 = parseFloat(document.getElementById("rightFreq").value) || 240;
+            drawWave(f1, f2);
+        } else { // JINAK SMAŽ PLOCHU
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
     }, 150);
 }
 
@@ -145,8 +120,7 @@ function updateDiff() {
 }
 
 function updateSwapStatus() {
-    let l = parseFloat(document.getElementById('leftFreq').value);
-    let r = parseFloat(document.getElementById('rightFreq').value);
+    let l = parseFloat(document.getElementById('leftFreq').value), r = parseFloat(document.getElementById('rightFreq').value);
     let btn = document.getElementById('swapBtn');
     if (l > r) { btn.innerText = "MODE: ENERGY (L>R)"; btn.style.backgroundColor = "#ff4400"; }
     else if (r > l) { btn.innerText = "MODE: RELAX (R>L)"; btn.style.backgroundColor = "#3498db"; }
@@ -161,8 +135,8 @@ function setPreset(f1, f2, mode) {
 }
 
 function swapChannels() {
-    let l = document.getElementById('leftFreq'), r = document.getElementById('rightFreq');
-    let temp = l.value; l.value = r.value; r.value = temp;
+    let l = document.getElementById('leftFreq'), r = document.getElementById('rightFreq'), temp = l.value;
+    l.value = r.value; r.value = temp;
     updateDiff(); updateSwapStatus(); if(audioCtx) start();
 }
 
@@ -170,6 +144,7 @@ function updateVolume() { if (gainNode) gainNode.gain.setTargetAtTime(document.g
 
 function start() {
     if (audioCtx) stop();
+    isPlaying = true; // ZAPNOUT HLÍDAČE
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     gainNode = audioCtx.createGain(); gainNode.gain.value = document.getElementById("volume").value;
@@ -182,53 +157,44 @@ function start() {
     leftOsc.start(); rightOsc.start(); drawWave(f1, f2);
 }
 
-function stop() { if (leftOsc) { leftOsc.stop(); rightOsc.stop(); } if (audioCtx) audioCtx.close(); if (animationId) cancelAnimationFrame(animationId); }
+function stop() { 
+    isPlaying = false; // VYPNOUT HLÍDAČE
+    if (leftOsc) { leftOsc.stop(); rightOsc.stop(); } 
+    if (audioCtx) audioCtx.close(); 
+    if (animationId) cancelAnimationFrame(animationId);
+    // SMAZAT VLNOVKY Z CANVASU
+    const canvas = document.getElementById("visual");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 
 function drawWave(f1, f2) {
     const canvas = document.getElementById("visual");
     const ctx = canvas.getContext("2d");
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
-
     let offset = 0;
     if (animationId) cancelAnimationFrame(animationId);
-
     function draw() {
+        if (!isPlaying) return; // POJISTKA UVNITŘ SMYČKY
         ctx.clearRect(0, 0, rect.width, rect.height);
-        
         function renderSine(freq, color, op) {
-            ctx.beginPath();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = color;
-            ctx.globalAlpha = op;
-            
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = color;
-
+            ctx.beginPath(); ctx.lineWidth = 3; ctx.strokeStyle = color; ctx.globalAlpha = op;
+            ctx.shadowBlur = 20; ctx.shadowColor = color;
             for (let x = 0; x < rect.width; x++) {
-                // Vytuněné hodnoty: hustota 0.03 a amplituda 60
                 let y = (rect.height / 2) + Math.sin((x * 0.03) + offset * (freq / 100)) * 60;
                 if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
+            ctx.stroke(); ctx.shadowBlur = 0;
         }
-
-        renderSine(f1, "#00f2ff", 0.8);
-        renderSine(f2, "#ff003c", 0.7);
-        
-        offset += 0.1;
-        animationId = requestAnimationFrame(draw);
+        renderSine(f1, "#00f2ff", 0.8); renderSine(f2, "#ff003c", 0.7);
+        offset += 0.1; animationId = requestAnimationFrame(draw);
     }
     draw();
 }
-
-changeLang('cs');
-updateSwapStatus();
+changeLang('cs'); updateSwapStatus();
 </script>
 </body>
 </html>
