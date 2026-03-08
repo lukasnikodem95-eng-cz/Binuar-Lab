@@ -3,72 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tinnitus Lab 🔬 - Binaural Edition</title>
+    <title>Tinnitus Lab 🔬 - High Frequency Edition</title>
     <style>
         body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; }
         .container { max-width: 850px; margin: auto; background: #151515; padding: 25px; border-radius: 20px; border: 1px solid #ff9900; box-shadow: 0 0 30px rgba(255, 153, 0, 0.2); }
         h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 5px; }
         
-        /* Ten tvůj čtvereček (XY Pad) */
         #xy-pad {
             width: 100%;
             height: 300px;
-            background: #000;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
             border: 2px solid #444;
             border-radius: 15px;
             position: relative;
             margin: 20px 0;
-            touch-action: none; /* Důležité pro mobilní telefony */
+            touch-action: none;
             overflow: hidden;
             cursor: crosshair;
         }
         #xy-cursor {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             background: #ff9900;
             border-radius: 50%;
             position: absolute;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 15px #ff9900;
+            box-shadow: 0 0 20px #ff9900;
             pointer-events: none;
+            border: 2px solid white;
         }
-        .pad-label { position: absolute; font-size: 0.7em; color: #666; pointer-events: none; }
+        .pad-label { position: absolute; font-size: 0.7em; color: #888; pointer-events: none; font-weight: bold; }
         
-        .btn-start { background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 10px; }
+        .btn-start { background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 10px; font-size: 1em; }
         .btn-stop { background: #222; color: #888; border: 1px solid #444; padding: 10px; border-radius: 12px; width: 100%; cursor: pointer; }
-        .stats { display: flex; justify-content: space-around; background: #111; padding: 10px; border-radius: 10px; margin-top: 15px; font-size: 0.8em; color: #ff9900; }
+        .stats { display: flex; justify-content: space-around; background: #111; padding: 12px; border-radius: 10px; margin-top: 15px; font-size: 0.9em; color: #ff9900; border: 1px solid #222; }
+        .back-link { display:block; margin-top:25px; color:#555; text-decoration:none; font-size:0.8em; transition: 0.3s; }
+        .back-link:hover { color: #ff9900; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>Tinnitus Lab 🔬</h1>
-    <p style="font-size: 0.7em; color: #888;">Tahej kuličkou: Do stran = Binaurální Hz | Nahoru/Dolů = Hloubka šumu</p>
+    <p style="font-size: 0.7em; color: #888; margin-bottom: 15px;">Optimalizováno pro vysoký pískot. Nahoru = Vyšší a ostřejší šum.</p>
 
     <div id="xy-pad">
-        <span class="pad-label" style="top: 5px; left: 50%; transform: translateX(-50%);">VÍCE ŠUMU</span>
-        <span class="pad-label" style="bottom: 5px; left: 50%; transform: translateX(-50%);">MÉNĚ ŠUMU</span>
-        <span class="pad-label" style="top: 50%; left: 5px; transform: translateY(-50%);">RELAX</span>
-        <span class="pad-label" style="top: 50%; right: 5px; transform: translateY(-50%);">ENERGIE</span>
+        <span class="pad-label" style="top: 10px; left: 50%; transform: translateX(-50%); color: #ff9900;">OSTRÝ SYČIVÝ ŠUM</span>
+        <span class="pad-label" style="bottom: 10px; left: 50%; transform: translateX(-50%);">JEMNÝ ŠUM</span>
+        <span class="pad-label" style="top: 50%; left: 10px; transform: translateY(-50%);">HLUBŠÍ TÓN</span>
+        <span class="pad-label" style="top: 50%; right: 10px; transform: translateY(-50%);">VYŠŠÍ TÓN</span>
         <div id="xy-cursor" style="left: 50%; top: 50%;"></div>
     </div>
 
     <div class="stats">
-        <span>Binaural: <b id="stat-bin">60</b> Hz</span>
-        <span>Noise: <b id="stat-noise">50</b>%</span>
+        <span>Tón: <b id="stat-bin">60</b> Hz</span>
+        <span>Filtr: <b id="stat-filter">5000</b> Hz</span>
     </div>
 
     <div style="margin-top: 20px;">
-        <button class="btn-start" onclick="start()">SPUSTIT KOMBINOVANOU TERAPII</button>
+        <button class="btn-start" onclick="start()">SPUSTIT TERAPII</button>
         <button class="btn-stop" onclick="stop()">ZASTAVIT</button>
     </div>
     
-    <a href="index.html" style="display:block; margin-top:20px; color:#555; text-decoration:none; font-size:0.8em;">← Zpět do Binaural Labu</a>
+    <a href="index.html" class="back-link">← Zpět do Binaural Labu</a>
 </div>
 
 <script>
-let audioCtx, oscL, oscR, gainBin, gainNoise, noiseNode, isPlaying = false;
+let audioCtx, oscL, oscR, gainBin, gainNoise, noiseNode, filterNode, isPlaying = false;
 
-// Nastavení XY Padu
 const pad = document.getElementById('xy-pad');
 const cursor = document.getElementById('xy-cursor');
 
@@ -91,39 +92,23 @@ function handleMove(e) {
 
 pad.addEventListener('mousemove', (e) => { if(e.buttons === 1) handleMove(e); });
 pad.addEventListener('mousedown', handleMove);
-pad.addEventListener('touchstart', handleMove);
-pad.addEventListener('touchmove', handleMove);
+pad.addEventListener('touchstart', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
+pad.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
 
 function updateAudio(x, y) {
-    // X osa (0-1) -> Frekvence 40Hz až 100Hz
-    const freq = 40 + (x * 60);
-    // Y osa (0-1) -> Hlasitost šumu (obráceně, nahoře je 1, dole 0)
-    const noiseVol = 1 - y;
+    // X osa: Frekvence tónu (40 - 150 Hz)
+    const freq = 40 + (x * 110);
+    // Y osa: Filtr šumu (od 1000 Hz do 12000 Hz) - nahoře je víc syčení
+    const filterFreq = 1000 + ((1 - y) * 11000);
 
-    document.getElementById('stat-bin').innerText = freq.toFixed(1);
-    document.getElementById('stat-noise').innerText = (noiseVol * 100).toFixed(0);
+    document.getElementById('stat-bin').innerText = freq.toFixed(0);
+    document.getElementById('stat-filter').innerText = filterFreq.toFixed(0);
 
-    if (isPlaying) {
+    if (isPlaying && audioCtx.state === 'running') {
         oscL.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
         oscR.frequency.setTargetAtTime(freq + 3, audioCtx.currentTime, 0.1);
-        gainNoise.gain.setTargetAtTime(noiseVol * 0.5, audioCtx.currentTime, 0.1);
+        filterNode.frequency.setTargetAtTime(filterFreq, audioCtx.currentTime, 0.1);
     }
-}
-
-function createBrownNoise() {
-    const bufferSize = 4096;
-    let lastOut = 0.0;
-    const node = audioCtx.createScriptProcessor(bufferSize, 1, 1);
-    node.onaudioprocess = (e) => {
-        const out = e.outputBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            const white = Math.random() * 2 - 1;
-            out[i] = (lastOut + (0.02 * white)) / 1.02;
-            lastOut = out[i];
-            out[i] *= 3.5;
-        }
-    };
-    return node;
 }
 
 function start() {
@@ -131,25 +116,44 @@ function start() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     isPlaying = true;
 
-    // Binaurální část
+    // 1. Bílý šum (vysoký a ostrý)
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+    }
+    noiseNode = audioCtx.createBufferSource();
+    noiseNode.buffer = noiseBuffer;
+    noiseNode.loop = true;
+
+    // 2. High-pass Filtr (tohle udělá to syčení)
+    filterNode = audioCtx.createBiquadFilter();
+    filterNode.type = "highpass"; 
+    
+    gainNoise = audioCtx.createGain();
+    gainNoise.gain.value = 0.15; // Hlasitost šumu
+
+    // 3. Binaurální tóny
     oscL = audioCtx.createOscillator();
     oscR = audioCtx.createOscillator();
     gainBin = audioCtx.createGain();
-    gainBin.gain.value = 0.3;
+    gainBin.gain.value = 0.2;
     const merger = audioCtx.createChannelMerger(2);
-    
-    // Šumová část
-    noiseNode = createBrownNoise();
-    gainNoise = audioCtx.createGain();
-    gainNoise.gain.value = 0.2;
 
+    // Propojení
+    noiseNode.connect(filterNode);
+    filterNode.connect(gainNoise).connect(audioCtx.destination);
+    
     oscL.connect(merger, 0, 0);
     oscR.connect(merger, 0, 1);
     merger.connect(gainBin).connect(audioCtx.destination);
-    noiseNode.connect(gainNoise).connect(audioCtx.destination);
 
-    oscL.start(); oscR.start();
-    // Inicializace podle pozice kuličky
+    noiseNode.start();
+    oscL.start();
+    oscR.start();
+
+    // Nastavení počátečních hodnot podle kuličky
     const rect = cursor.getBoundingClientRect();
     const padRect = pad.getBoundingClientRect();
     updateAudio((rect.left - padRect.left)/padRect.width, (rect.top - padRect.top)/padRect.height);
