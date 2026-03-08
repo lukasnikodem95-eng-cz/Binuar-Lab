@@ -3,182 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tinnitus Precision Lab 🔬</title>
+    <title>Tinnitus Lab 🔬</title>
     <style>
-        :root { --accent: #ff9900; --bg: #0a0a0a; --panel: #151515; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 500px; width: 100%; text-align: center; }
+        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: auto; padding: 20px; position: relative; }
         
-        /* Nadpis vycentrovaný */
-        h1 { color: var(--accent); margin-bottom: 25px; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; font-size: 1.5em; }
+        /* Jazyková lišta */
+        .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 10px; cursor: pointer; z-index: 100; }
+        .lang-bar span { opacity: 0.4; transition: 0.3s; font-size: 1.2em; }
+        .lang-bar span.active { opacity: 1; transform: scale(1.2); }
 
-        /* Ovládací obdélník se zaoblenými rohy */
-        .pad-area {
-            width: 100%; height: 320px; background: #000;
-            border: 1px solid #333; border-radius: 30px;
-            position: relative; touch-action: none; overflow: hidden;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 20px rgba(255,153,0,0.05);
-            margin-bottom: 25px;
+        /* Tlačítko zpět */
+        .back-btn { position: absolute; top: 15px; left: 20px; color: #444; text-decoration: none; font-size: 1.5em; z-index: 100; transition: 0.3s; }
+        .back-btn:hover { color: #ff9900; }
+        
+        h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 5px; font-size: 1.8em; }
+
+        /* Čistý obdélníkový design - bez textu uvnitř */
+        .pad-wrap { width: 100%; height: 450px; margin: 15px 0; position: relative; }
+        #xy-pad {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; cursor: crosshair; touch-action: none; overflow: hidden;
+            border: 2px solid #222; border-radius: 30px; box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        #cursor {
-            width: 26px; height: 26px; background: var(--accent);
-            border: 3px solid #fff; border-radius: 50%;
-            position: absolute; transform: translate(-50%, -50%);
-            pointer-events: none;
-            box-shadow: 0 0 20px var(--accent);
-        }
+        canvas#noiseCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #xy-cursor { width: 24px; height: 24px; border-radius: 50%; position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; border: 2px solid #fff; }
+        
+        /* Boxy pro hodnoty */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 10px auto; max-width: 500px; }
+        .stat-box { background: #151515; padding: 15px; border-radius: 20px; border: 1px solid #222; }
+        .stat-box label { display: block; font-size: 0.7em; color: #555; margin-bottom: 5px; text-transform: uppercase; }
+        .stat-box b { font-size: 1.4em; color: #ff9900; }
 
-        /* Číselné karty */
-        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .card { 
-            background: var(--panel); padding: 15px; border-radius: 20px; 
-            border: 1px solid #222; text-align: center;
-        }
-        .card label { display: block; font-size: 0.7em; color: #666; text-transform: uppercase; margin-bottom: 8px; font-weight: bold; }
-        .card input {
-            background: transparent; border: none; color: var(--accent);
-            font-size: 1.6em; font-family: 'Courier New', monospace;
-            width: 100%; text-align: center; outline: none;
-        }
-
-        /* Mixer pro poměr hlasitosti */
-        .mixer-card { background: var(--panel); padding: 15px; border-radius: 20px; border: 1px solid #222; margin-bottom: 25px; }
-        .mixer-label { display: flex; justify-content: space-between; font-size: 0.7em; color: #666; margin-bottom: 10px; font-weight: bold; }
-        input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; height: 8px; }
-
-        .btn-play {
-            width: 100%; padding: 22px; border-radius: 50px; border: none;
-            background: var(--accent); color: #000; font-weight: bold;
-            font-size: 1.2em; cursor: pointer; transition: 0.3s;
-            box-shadow: 0 10px 25px rgba(255,153,0,0.3);
-            text-transform: uppercase;
-        }
-        .btn-play:active { transform: scale(0.98); }
-        .btn-play.active { background: #222; color: #666; box-shadow: none; }
+        .mixer-section { background: #111; padding: 20px; border-radius: 25px; border: 1px solid #222; margin-top: 10px; }
+        input[type="range"].mixer-fader { width: 100%; accent-color: #ff9900; height: 10px; margin: 10px 0; }
+        
+        .btn-start { background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; width: 100%; cursor: pointer; font-size: 1.1em; margin-top: 10px; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <h1>Tinnitus Lab 🔬</h1>
-
-    <div class="pad-area" id="pad">
-        <div id="cursor" style="left: 50%; top: 50%;"></div>
+    <a href="index.html" class="back-btn">←</a>
+    
+    <div class="lang-bar">
+        <span id="b-cs" class="active" onclick="changeLang('cs')">🇨🇿</span>
+        <span id="b-en" onclick="changeLang('en')">🇬🇧</span>
+        <span id="b-de" onclick="changeLang('de')">🇩🇪</span>
+        <span id="b-es" onclick="changeLang('es')">🇪🇸</span>
+        <span id="b-fr" onclick="changeLang('fr')">🇫🇷</span>
     </div>
 
-    <div class="input-row">
-        <div class="card">
-            <label>Binaural (Hz)</label>
-            <input type="number" id="in-bin" value="60" oninput="fromInput()">
-        </div>
-        <div class="card">
-            <label>Filtr (Hz)</label>
-            <input type="number" id="in-filter" value="5000" oninput="fromInput()">
+    <h1 id="txt-title">TINNITUS LAB 🔬</h1>
+
+    <div class="pad-wrap">
+        <div id="xy-pad">
+            <canvas id="noiseCanvas"></canvas>
+            <div id="xy-cursor" style="left: 50%; top: 50%;"></div>
         </div>
     </div>
 
-    <div class="mixer-card">
-        <div class="mixer-label">
-            <span>TÓN</span>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <label id="lbl-bin">Binaural (Hz)</label>
+            <b id="stat-bin">60</b>
+        </div>
+        <div class="stat-box">
+            <label id="lbl-fil">Filtr (Hz)</label>
+            <b id="stat-filter">5000</b>
+        </div>
+    </div>
+
+    <div class="mixer-section">
+        <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: #444; font-weight: bold;">
+            <span id="mix-l">TÓN</span>
             <span>MIXER</span>
-            <span>ŠUM</span>
+            <span id="mix-r">ŠUM</span>
         </div>
-        <input type="range" id="mix" min="0" max="1" step="0.01" value="0.5" oninput="updateMix()">
+        <input type="range" id="mixer" class="mixer-fader" min="0" max="1" step="0.01" value="0.5" oninput="updateMix()">
     </div>
 
-    <button class="btn-play" id="btn" onclick="toggle()">SPUSTIT TERAPII</button>
+    <button class="btn-start" id="btn-start" onclick="start()">SPUSTIT TERAPII</button>
 </div>
 
 <script>
-let audioCtx, oscL, oscR, filter, gBin, gNoise, noise, isPlaying = false;
-const pad = document.getElementById('pad');
-const cursor = document.getElementById('cursor');
-const inBin = document.getElementById('in-bin');
-const inFilter = document.getElementById('in-filter');
-const mixSlider = document.getElementById('mix');
+// Logika pro překlady (ponechána pro ostatní prvky)
+const texts = {
+    cs: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtr (Hz)", start: "SPUSTIT TERAPII", stop: "ZASTAVIT" },
+    en: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "START THERAPY", stop: "STOP" },
+    de: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "THERAPIE STARTEN", stop: "STOPP" },
+    es: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtro (Hz)", start: "INICIAR TERAPIA", stop: "PARAR" },
+    fr: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtre (Hz)", start: "LANCER LA THÉRAPIE", stop: "ARRÊTER" }
+};
 
-const minF = 1000, maxF = 18000;
-
-function update(e) {
-    const rect = pad.getBoundingClientRect();
-    const xRaw = e.touches ? e.touches[0].clientX : e.clientX;
-    const yRaw = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    let x = Math.max(0, Math.min(1, (xRaw - rect.left) / rect.width));
-    let y = Math.max(0, Math.min(1, (yRaw - rect.top) / rect.height));
-
-    const fBin = Math.round(40 + (x * 160));
-    const fFil = Math.round(Math.pow(maxF / minF, 1 - y) * minF);
-
-    inBin.value = fBin;
-    inFilter.value = fFil;
-    moveCursor(x, y);
-    if(isPlaying) apply(fBin, fFil);
+function changeLang(lang) {
+    document.querySelectorAll('.lang-bar span').forEach(s => s.classList.remove('active'));
+    document.getElementById('b-' + lang).classList.add('active');
+    document.getElementById('txt-title').innerText = texts[lang].title;
+    document.getElementById('lbl-bin').innerText = texts[lang].bin;
+    document.getElementById('lbl-fil').innerText = texts[lang].fil;
+    document.getElementById('btn-start').innerText = isPlaying ? texts[lang].stop : texts[lang].start;
 }
 
-function fromInput() {
-    const fb = parseFloat(inBin.value) || 40;
-    const ff = parseFloat(inFilter.value) || 1000;
-    let x = (fb - 40) / 160;
-    let y = 1 - (Math.log(ff / minF) / Math.log(maxF / minF));
-    moveCursor(x, y);
-    if(isPlaying) apply(fb, ff);
+// Logika zvuku a animace (zůstává zachována s logaritmickým filtrem pro mobil)
+let audioCtx, oscL, oscR, gainBin, gainNoise, noiseNode, filterNode, isPlaying = false;
+let canvas = document.getElementById('noiseCanvas'), ctx = canvas.getContext('2d'), particles = [];
+let mouseX = 0.5, mouseY = 0.5;
+
+function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+window.addEventListener('resize', resize); resize();
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * 10; this.vy = (Math.random() - 0.5) * 10;
+        this.life = 1; this.color = color;
+    }
+    update(n) { this.x += this.vx * n; this.y += this.vy * n; this.life -= 0.02; }
+    draw() { ctx.fillStyle = this.color.replace('1)', this.life + ')'); ctx.fillRect(this.x, this.y, 3, 3); }
+}
+
+function animate() {
+    ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    const noiseLevel = 1 - mouseY;
+    const hue = 240 - (mouseX * 240);
+    const color = `hsla(${hue}, 100%, 60%, 1)`;
+    const cursor = document.getElementById('xy-cursor');
+    cursor.style.backgroundColor = color; cursor.style.boxShadow = `0 0 20px ${color}`;
+
+    if (isPlaying && Math.random() < noiseLevel) {
+        for(let i=0; i<3; i++) particles.push(new Particle(mouseX*canvas.width, mouseY*canvas.height, color));
+    }
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => { p.update(noiseLevel + 0.2); p.draw(); });
+    requestAnimationFrame(animate);
+}
+animate();
+
+function handleMove(e) {
+    const rect = document.getElementById('xy-pad').getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    mouseX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    mouseY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    document.getElementById('xy-cursor').style.left = (mouseX * 100) + '%';
+    document.getElementById('xy-cursor').style.top = (mouseY * 100) + '%';
+    updateAudio(mouseX, mouseY);
+}
+
+document.getElementById('xy-pad').addEventListener('mousedown', handleMove);
+document.getElementById('xy-pad').addEventListener('mousemove', (e) => { if(e.buttons === 1) handleMove(e); });
+document.getElementById('xy-pad').addEventListener('touchstart', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
+document.getElementById('xy-pad').addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
+
+function updateAudio(x, y) {
+    const freq = 40 + (x * 160);
+    const filterFreq = Math.pow(16000 / 1000, (1 - y)) * 1000;
+    document.getElementById('stat-bin').innerText = freq.toFixed(0);
+    document.getElementById('stat-filter').innerText = filterFreq.toFixed(0);
+    if (isPlaying) {
+        oscL.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+        oscR.frequency.setTargetAtTime(freq + 3, audioCtx.currentTime, 0.1);
+        filterNode.frequency.setTargetAtTime(filterFreq, audioCtx.currentTime, 0.1);
+    }
 }
 
 function updateMix() {
-    if(!isPlaying) return;
-    const val = parseFloat(mixSlider.value);
-    gBin.gain.setTargetAtTime((1 - val) * 0.3, audioCtx.currentTime, 0.1);
-    gNoise.gain.setTargetAtTime(val * 0.3, audioCtx.currentTime, 0.1);
+    if (!isPlaying) return;
+    const v = document.getElementById('mixer').value;
+    gainBin.gain.setTargetAtTime((1-v)*0.4, audioCtx.currentTime, 0.1);
+    gainNoise.gain.setTargetAtTime(v*0.4, audioCtx.currentTime, 0.1);
 }
 
-function moveCursor(x, y) {
-    cursor.style.left = (Math.max(0, Math.min(100, x * 100))) + '%';
-    cursor.style.top = (Math.max(0, Math.min(100, y * 100))) + '%';
-}
-
-function apply(fb, ff) {
-    oscL.frequency.setTargetAtTime(fb, audioCtx.currentTime, 0.1);
-    oscR.frequency.setTargetAtTime(fb + 3, audioCtx.currentTime, 0.1);
-    filter.frequency.setTargetAtTime(ff, audioCtx.currentTime, 0.1);
-}
-
-pad.addEventListener('mousedown', (e) => { update(e); window.onmousemove = update; });
-window.addEventListener('mouseup', () => window.onmousemove = null);
-pad.addEventListener('touchstart', (e) => { e.preventDefault(); update(e); }, {passive:false});
-pad.addEventListener('touchmove', (e) => { e.preventDefault(); update(e); }, {passive:false});
-
-function toggle() {
-    if (isPlaying) { 
-        audioCtx.close(); isPlaying = false; 
-        document.getElementById('btn').innerText="SPUSTIT TERAPII"; 
-        document.getElementById('btn').classList.remove('active'); 
-        return; 
-    }
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+function start() {
+    if (isPlaying) { stop(); return; }
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     isPlaying = true;
-    document.getElementById('btn').innerText="ZASTAVIT"; 
-    document.getElementById('btn').classList.add('active');
-
-    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
-    const out = buf.getChannelData(0);
-    for (let i = 0; i < buf.length; i++) out[i] = Math.random() * 2 - 1;
+    document.getElementById('btn-start').innerText = texts[document.querySelector('.lang-bar span.active').id.split('-')[1]].stop;
     
-    noise = audioCtx.createBufferSource(); noise.buffer = buf; noise.loop = true;
-    filter = audioCtx.createBiquadFilter(); filter.type = "highpass";
-    gNoise = audioCtx.createGain(); 
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+    
+    noiseNode = audioCtx.createBufferSource();
+    noiseNode.buffer = noiseBuffer; noiseNode.loop = true;
+    filterNode = audioCtx.createBiquadFilter(); filterNode.type = "highpass";
+    gainNoise = audioCtx.createGain();
+    
     oscL = audioCtx.createOscillator(); oscR = audioCtx.createOscillator();
-    gBin = audioCtx.createGain(); 
-    const m = audioCtx.createChannelMerger(2);
-
-    noise.connect(filter).connect(gNoise).connect(audioCtx.destination);
-    oscL.connect(m,0,0); oscR.connect(m,0,1); m.connect(gBin).connect(audioCtx.destination);
+    gainBin = audioCtx.createGain(); const merger = audioCtx.createChannelMerger(2);
     
-    noise.start(); oscL.start(); oscR.start();
-    updateMix();
-    fromInput();
+    noiseNode.connect(filterNode); filterNode.connect(gainNoise).connect(audioCtx.destination);
+    oscL.connect(merger, 0, 0); oscR.connect(merger, 0, 1); merger.connect(gainBin).connect(audioCtx.destination);
+    
+    noiseNode.start(); oscL.start(); oscR.start();
+    updateMix(); updateAudio(mouseX, mouseY);
 }
+
+function stop() { isPlaying = false; if (audioCtx) audioCtx.close(); document.getElementById('btn-start').innerText = texts[document.querySelector('.lang-bar span.active').id.split('-')[1]].start; }
 </script>
 </body>
 </html>
