@@ -3,41 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tinnitus Lab 🔬 - Master Mixer</title>
+    <title>Tinnitus Lab 🔬 - Wide Edition</title>
     <style>
-        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 850px; margin: auto; background: #151515; padding: 25px; border-radius: 20px; border: 1px solid #ff9900; box-shadow: 0 0 30px rgba(255, 153, 0, 0.2); }
-        h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 5px; }
+        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .container { max-width: 1100px; margin: auto; background: #151515; padding: 20px; border-radius: 25px; border: 1px solid #ff9900; box-shadow: 0 0 30px rgba(255, 153, 0, 0.2); }
+        h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 10px; }
         
-        /* 1. ZMĚNA: Pozadí čtverce je čistě černé bez gradientu */
+        /* Rozšířené pole podle fotky */
         #xy-pad {
-            width: 100%; height: 280px; background: #000000;
-            border: 2px solid #333; border-radius: 15px; position: relative; margin: 20px 0; touch-action: none; overflow: hidden; cursor: crosshair;
+            width: 100%; height: 500px; background: #000;
+            border: 2px solid #333; border-radius: 20px; position: relative; margin: 15px 0; touch-action: none; overflow: hidden;
         }
+        canvas#noiseCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         
-        /* 2. ZMĚNA: Kulička má silnější NEONOVÝ EFEKT */
         #xy-cursor {
-            width: 24px; height: 24px; background: #ff9900; border-radius: 50%; position: absolute;
-            transform: translate(-50%, -50%); 
-            /* Silnější oranžovo-růžová záře */
-            box-shadow: 0 0 15px #ff9900, 0 0 30px #ff00ff; 
-            pointer-events: none; border: 2px solid white;
+            width: 22px; height: 22px; border-radius: 50%; position: absolute;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 10;
+            border: 2px solid #fff;
         }
         
-        /* Styl pro popisky */
-        .pad-label { position: absolute; font-size: 0.65em; color: #666; pointer-events: none; font-weight: bold; text-transform: uppercase; }
+        .pad-label { position: absolute; font-size: 0.7em; color: #555; pointer-events: none; font-weight: bold; z-index: 5; letter-spacing: 1px; }
         
-        /* Styl pro Mixer (Fader) */
-        .mixer-section { margin: 25px 0; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #222; }
-        .mixer-labels { display: flex; justify-content: space-between; font-size: 0.7em; color: #888; margin-bottom: 10px; }
-        input[type="range"].mixer-fader {
-            width: 100%; height: 8px; border-radius: 5px; background: #222; outline: none; -webkit-appearance: none; accent-color: #ff9900;
+        /* Statistiky u sebe uprostřed podle fotky */
+        .stats-center { 
+            display: flex; justify-content: center; align-items: center; gap: 30px; 
+            background: rgba(0,0,0,0.3); padding: 10px; border-radius: 50px; 
+            width: fit-content; margin: 0 auto 15px auto; border: 1px solid #222;
         }
+        .stat-item { font-size: 0.9em; color: #ff9900; }
+        .stat-item b { font-size: 1.1em; color: #fff; text-shadow: 0 0 5px #ff9900; }
 
-        .btn-start { background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 10px; font-size: 1.1em; }
-        .btn-stop { background: #222; color: #888; border: 1px solid #444; padding: 10px; border-radius: 12px; width: 100%; cursor: pointer; }
-        .stats { display: flex; justify-content: space-around; font-size: 0.8em; color: #ff9900; margin-bottom: 10px; }
-        .back-link { display:block; margin-top:20px; color:#444; text-decoration:none; font-size:0.8em; }
+        .mixer-section { margin: 10px 0; background: #111; padding: 15px; border-radius: 15px; border: 1px solid #222; }
+        input[type="range"].mixer-fader { width: 100%; accent-color: #ff9900; height: 10px; cursor: pointer; }
+        
+        .btn-start { background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 1.1em; box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3); }
+        .btn-stop { background: #222; color: #888; border: 1px solid #444; padding: 10px; border-radius: 12px; width: 100%; margin-top: 10px; cursor: pointer; transition: 0.3s; }
+        .btn-stop:hover { color: #fff; border-color: #666; }
+        .back-link { display:block; margin-top:15px; color:#444; text-decoration:none; font-size:0.8em; }
     </style>
 </head>
 <body>
@@ -45,21 +47,22 @@
     <h1>Tinnitus Lab 🔬</h1>
     
     <div id="xy-pad">
-        <span class="pad-label" style="top: 10px; left: 50%; transform: translateX(-50%);">VÍCE ŠUMU</span>
-        <span class="pad-label" style="bottom: 10px; left: 50%; transform: translateX(-50%);">MÉNĚ ŠUMU</span>
-        <span class="pad-label" style="top: 50%; left: 10px; transform: translateY(-50%);">RELAX</span>
-        <span class="pad-label" style="top: 50%; right: 10px; transform: translateY(-50%);">ENERGIE</span>
-        
+        <canvas id="noiseCanvas"></canvas>
+        <span class="pad-label" style="top: 15px; left: 50%; transform: translateX(-50%);">MAX SYČENÍ</span>
+        <span class="pad-label" style="bottom: 15px; left: 50%; transform: translateX(-50%);">JEMNÝ ŠUM</span>
+        <span class="pad-label" style="top: 50%; left: 15px; transform: translateY(-50%);">RELAX</span>
+        <span class="pad-label" style="top: 50%; right: 15px; transform: translateY(-50%);">ENERGIE</span>
         <div id="xy-cursor" style="left: 50%; top: 50%;"></div>
     </div>
 
-    <div class="stats">
-        <span>Tón: <b id="stat-bin">60</b> Hz</span>
-        <span>Filtr: <b id="stat-filter">5000</b> Hz</span>
+    <div class="stats-center">
+        <div class="stat-item">Tón: <b id="stat-bin">60</b> Hz</div>
+        <div style="color: #333; font-weight: bold;">|</div>
+        <div class="stat-item">Filtr: <b id="stat-filter">5000</b> Hz</div>
     </div>
 
     <div class="mixer-section">
-        <div class="mixer-labels">
+        <div style="display: flex; justify-content: space-between; font-size: 0.6em; color: #555; margin-bottom: 5px; font-weight: bold;">
             <span>🎧 BINAURAL</span>
             <span>MIXER</span>
             <span>🌊 SHUM</span>
@@ -75,19 +78,83 @@
 
 <script>
 let audioCtx, oscL, oscR, gainBin, gainNoise, noiseNode, filterNode, isPlaying = false;
+let canvas, ctx, particles = [];
+let mouseX = 0.5, mouseY = 0.5;
 
 const pad = document.getElementById('xy-pad');
 const cursor = document.getElementById('xy-cursor');
+canvas = document.getElementById('noiseCanvas');
+ctx = canvas.getContext('2d');
+
+function resize() {
+    canvas.width = pad.offsetWidth;
+    canvas.height = pad.offsetHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * 12;
+        this.vy = (Math.random() - 0.5) * 12;
+        this.life = 1;
+        this.color = color;
+        this.size = Math.random() * 3 + 1;
+    }
+    update(noiseLevel) {
+        this.x += this.vx * noiseLevel;
+        this.y += this.vy * noiseLevel;
+        this.life -= 0.015;
+    }
+    draw() {
+        ctx.fillStyle = this.color.replace('1)', this.life + ')');
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function animate() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    const noiseLevel = 1 - mouseY;
+    const hue = 240 - (mouseX * 240); 
+    const color = `hsla(${hue}, 100%, 60%, 1)`;
+    
+    cursor.style.boxShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
+    cursor.style.backgroundColor = color;
+
+    if (isPlaying && Math.random() < (noiseLevel * 0.8)) {
+        for(let i=0; i<6; i++) {
+            particles.push(new Particle(mouseX * canvas.width, mouseY * canvas.height, color));
+        }
+    }
+
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => { p.update(noiseLevel + 0.3); p.draw(); });
+
+    const grad = ctx.createRadialGradient(mouseX*canvas.width, mouseY*canvas.height, 0, mouseX*canvas.width, mouseY*canvas.height, 200 * (noiseLevel + 0.2));
+    grad.addColorStop(0, color.replace('1)', '0.4)'));
+    grad.addColorStop(0.5, color.replace('1)', '0.1)'));
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+
+    requestAnimationFrame(animate);
+}
+animate();
 
 function handleMove(e) {
     const rect = pad.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    let y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-    cursor.style.left = (x * 100) + '%';
-    cursor.style.top = (y * 100) + '%';
-    updateAudio(x, y);
+    mouseX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    mouseY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    cursor.style.left = (mouseX * 100) + '%';
+    cursor.style.top = (mouseY * 100) + '%';
+    updateAudio(mouseX, mouseY);
 }
 
 pad.addEventListener('mousedown', handleMove);
@@ -110,7 +177,6 @@ function updateAudio(x, y) {
 function updateMix() {
     if (!isPlaying) return;
     const mixVal = parseFloat(document.getElementById('mixer').value);
-    // Logaritmické zeslabování pro plynulejší přechod
     gainBin.gain.setTargetAtTime((1 - mixVal) * 0.4, audioCtx.currentTime, 0.1);
     gainNoise.gain.setTargetAtTime(mixVal * 0.4, audioCtx.currentTime, 0.1);
 }
@@ -119,8 +185,6 @@ function start() {
     if (isPlaying) stop();
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     isPlaying = true;
-
-    // ŠUM (White)
     const bufferSize = 2 * audioCtx.sampleRate;
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
@@ -128,37 +192,25 @@ function start() {
     noiseNode = audioCtx.createBufferSource();
     noiseNode.buffer = noiseBuffer;
     noiseNode.loop = true;
-
     filterNode = audioCtx.createBiquadFilter();
     filterNode.type = "highpass"; 
     gainNoise = audioCtx.createGain();
-
-    // BINAURAL
     oscL = audioCtx.createOscillator();
     oscR = audioCtx.createOscillator();
     gainBin = audioCtx.createGain();
     const merger = audioCtx.createChannelMerger(2);
-
     noiseNode.connect(filterNode);
     filterNode.connect(gainNoise).connect(audioCtx.destination);
     oscL.connect(merger, 0, 0);
     oscR.connect(merger, 0, 1);
     merger.connect(gainBin).connect(audioCtx.destination);
-
     noiseNode.start();
     oscL.start(); oscR.start();
-
-    // Nastavení podle aktuálních sliderů
     updateMix();
-    const rect = cursor.getBoundingClientRect();
-    const padRect = pad.getBoundingClientRect();
-    updateAudio((rect.left - padRect.left)/padRect.width, (rect.top - padRect.top)/padRect.height);
+    updateAudio(mouseX, mouseY);
 }
 
-function stop() {
-    isPlaying = false;
-    if (audioCtx) audioCtx.close();
-}
+function stop() { isPlaying = false; if (audioCtx) audioCtx.close(); }
 </script>
 </body>
 </html>
