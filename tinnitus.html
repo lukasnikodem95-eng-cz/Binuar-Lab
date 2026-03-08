@@ -162,29 +162,53 @@ let mouseX = 0.5, mouseY = 0.5;
 function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
 window.addEventListener('resize', resize); resize();
 
+// --- UPRAVENÁ ČÁSTICE (KULIČKA S DELŠÍ ŽIVOTNOSTÍ) ---
 class Particle {
     constructor(x, y, color) {
         this.x = x; this.y = y;
-        this.vx = (Math.random() - 0.5) * 10; this.vy = (Math.random() - 0.5) * 10;
-        this.life = 1; this.color = color;
+        this.vx = (Math.random() - 0.5) * 6; 
+        this.vy = (Math.random() - 0.5) * 6;
+        this.life = 1.0; 
+        this.decay = 0.01 + Math.random() * 0.01; // Pomalé mizení
+        this.color = color;
+        this.size = Math.random() * 4 + 1;
     }
-    update(n) { this.x += this.vx * n; this.y += this.vy * n; this.life -= 0.02; }
-    draw() { ctx.fillStyle = this.color.replace('1)', this.life + ')'); ctx.fillRect(this.x, this.y, 3, 3); }
+    update(n) { 
+        this.x += this.vx * (n + 0.3); 
+        this.y += this.vy * (n + 0.3); 
+        this.life -= this.decay; 
+    }
+    draw() { 
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color.replace('1)', this.life + ')');
+        ctx.fill();
+    }
 }
 
 function animate() {
-    ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Zdrojový režim pro plynulý ocas (ghosting)
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0,0,0,0.15)'; 
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    
     const noiseLevel = 1 - mouseY;
     const hue = 240 - (mouseX * 240);
     const color = `hsla(${hue}, 100%, 60%, 1)`;
     const cursor = document.getElementById('xy-cursor');
-    cursor.style.backgroundColor = color; cursor.style.boxShadow = `0 0 20px ${color}`;
+    cursor.style.backgroundColor = color; 
+    cursor.style.boxShadow = `0 0 25px ${color}`;
 
-    if (isPlaying && Math.random() < noiseLevel) {
+    // Lighter režim pro zářící efekt kuliček
+    ctx.globalCompositeOperation = 'lighter';
+
+    if (isPlaying && Math.random() < (noiseLevel + 0.2)) {
         for(let i=0; i<3; i++) particles.push(new Particle(mouseX*canvas.width, mouseY*canvas.height, color));
     }
+    
     particles = particles.filter(p => p.life > 0);
-    particles.forEach(p => { p.update(noiseLevel + 0.2); p.draw(); });
+    particles.forEach(p => { p.update(noiseLevel); p.draw(); });
+    
     requestAnimationFrame(animate);
 }
 animate();
