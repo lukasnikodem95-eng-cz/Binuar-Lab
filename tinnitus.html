@@ -8,18 +8,15 @@
         body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
         .container { max-width: 1100px; margin: auto; padding: 20px; position: relative; }
         
-        /* Jazyková lišta */
         .lang-bar { position: absolute; top: 15px; right: 20px; display: flex; gap: 10px; cursor: pointer; z-index: 100; }
         .lang-bar span { opacity: 0.4; transition: 0.3s; font-size: 1.2em; }
         .lang-bar span.active { opacity: 1; transform: scale(1.2); }
 
-        /* Tlačítko zpět */
         .back-btn { position: absolute; top: 15px; left: 20px; color: #444; text-decoration: none; font-size: 1.5em; z-index: 100; transition: 0.3s; }
         .back-btn:hover { color: #ff9900; }
         
         h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 5px; font-size: 1.8em; }
 
-        /* Čistý obdélníkový design - bez textu uvnitř */
         .pad-wrap { width: 100%; height: 450px; margin: 15px 0; position: relative; }
         #xy-pad {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -30,11 +27,16 @@
         canvas#noiseCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         #xy-cursor { width: 24px; height: 24px; border-radius: 50%; position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; border: 2px solid #fff; }
         
-        /* Boxy pro hodnoty */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 10px auto; max-width: 500px; }
-        .stat-box { background: #151515; padding: 15px; border-radius: 20px; border: 1px solid #222; }
-        .stat-box label { display: block; font-size: 0.7em; color: #555; margin-bottom: 5px; text-transform: uppercase; }
-        .stat-box b { font-size: 1.4em; color: #ff9900; }
+        .stat-box { background: #151515; padding: 10px; border-radius: 20px; border: 1px solid #222; transition: 0.3s; }
+        .stat-box:focus-within { border-color: #ff9900; box-shadow: 0 0 10px rgba(255, 153, 0, 0.2); }
+        .stat-box label { display: block; font-size: 0.7em; color: #555; margin-bottom: 2px; text-transform: uppercase; pointer-events: none; }
+        
+        /* Styl pro vpisování hodnot */
+        .stat-input {
+            background: transparent; border: none; color: #ff9900; font-size: 1.4em; 
+            font-weight: bold; width: 100%; text-align: center; outline: none; font-family: inherit;
+        }
 
         .mixer-section { background: #111; padding: 20px; border-radius: 25px; border: 1px solid #222; margin-top: 10px; }
         input[type="range"].mixer-fader { width: 100%; accent-color: #ff9900; height: 10px; margin: 10px 0; }
@@ -66,11 +68,11 @@
     <div class="stats-grid">
         <div class="stat-box">
             <label id="lbl-bin">Binaural (Hz)</label>
-            <b id="stat-bin">60</b>
+            <input type="number" id="input-bin" class="stat-input" value="60" oninput="manualUpdate()">
         </div>
         <div class="stat-box">
             <label id="lbl-fil">Filtr (Hz)</label>
-            <b id="stat-filter">5000</b>
+            <input type="number" id="input-filter" class="stat-input" value="5000" oninput="manualUpdate()">
         </div>
     </div>
 
@@ -87,7 +89,6 @@
 </div>
 
 <script>
-// Logika pro překlady (ponechána pro ostatní prvky)
 const texts = {
     cs: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filtr (Hz)", start: "SPUSTIT TERAPII", stop: "ZASTAVIT" },
     en: { title: "TINNITUS LAB 🔬", bin: "Binaural (Hz)", fil: "Filter (Hz)", start: "START THERAPY", stop: "STOP" },
@@ -105,7 +106,6 @@ function changeLang(lang) {
     document.getElementById('btn-start').innerText = isPlaying ? texts[lang].stop : texts[lang].start;
 }
 
-// Logika zvuku a animace (zůstává zachována s logaritmickým filtrem pro mobil)
 let audioCtx, oscL, oscR, gainBin, gainNoise, noiseNode, filterNode, isPlaying = false;
 let canvas = document.getElementById('noiseCanvas'), ctx = canvas.getContext('2d'), particles = [];
 let mouseX = 0.5, mouseY = 0.5;
@@ -140,6 +140,25 @@ function animate() {
 }
 animate();
 
+// Funkce pro ruční zadání hodnoty
+function manualUpdate() {
+    let freq = parseFloat(document.getElementById('input-bin').value) || 40;
+    let fil = parseFloat(document.getElementById('input-filter').value) || 1000;
+    
+    // Zpětný výpočet pozice kuličky (X, Y) aby odpovídala zadaným číslům
+    mouseX = (freq - 40) / 160;
+    mouseY = 1 - (Math.log(fil / 1000) / Math.log(16000 / 1000));
+    
+    // Omezení rozsahu
+    mouseX = Math.max(0, Math.min(1, mouseX));
+    mouseY = Math.max(0, Math.min(1, mouseY));
+    
+    document.getElementById('xy-cursor').style.left = (mouseX * 100) + '%';
+    document.getElementById('xy-cursor').style.top = (mouseY * 100) + '%';
+    
+    if (isPlaying) updateAudio(mouseX, mouseY, false); // false = neaktualizovat inputy znovu
+}
+
 function handleMove(e) {
     const rect = document.getElementById('xy-pad').getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -148,7 +167,7 @@ function handleMove(e) {
     mouseY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
     document.getElementById('xy-cursor').style.left = (mouseX * 100) + '%';
     document.getElementById('xy-cursor').style.top = (mouseY * 100) + '%';
-    updateAudio(mouseX, mouseY);
+    updateAudio(mouseX, mouseY, true);
 }
 
 document.getElementById('xy-pad').addEventListener('mousedown', handleMove);
@@ -156,11 +175,15 @@ document.getElementById('xy-pad').addEventListener('mousemove', (e) => { if(e.bu
 document.getElementById('xy-pad').addEventListener('touchstart', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
 document.getElementById('xy-pad').addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
 
-function updateAudio(x, y) {
+function updateAudio(x, y, updateInputs) {
     const freq = 40 + (x * 160);
     const filterFreq = Math.pow(16000 / 1000, (1 - y)) * 1000;
-    document.getElementById('stat-bin').innerText = freq.toFixed(0);
-    document.getElementById('stat-filter').innerText = filterFreq.toFixed(0);
+    
+    if(updateInputs) {
+        document.getElementById('input-bin').value = freq.toFixed(0);
+        document.getElementById('input-filter').value = filterFreq.toFixed(0);
+    }
+    
     if (isPlaying) {
         oscL.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
         oscR.frequency.setTargetAtTime(freq + 3, audioCtx.currentTime, 0.1);
@@ -190,7 +213,6 @@ function start() {
     noiseNode.buffer = noiseBuffer; noiseNode.loop = true;
     filterNode = audioCtx.createBiquadFilter(); filterNode.type = "highpass";
     gainNoise = audioCtx.createGain();
-    
     oscL = audioCtx.createOscillator(); oscR = audioCtx.createOscillator();
     gainBin = audioCtx.createGain(); const merger = audioCtx.createChannelMerger(2);
     
@@ -198,7 +220,7 @@ function start() {
     oscL.connect(merger, 0, 0); oscR.connect(merger, 0, 1); merger.connect(gainBin).connect(audioCtx.destination);
     
     noiseNode.start(); oscL.start(); oscR.start();
-    updateMix(); updateAudio(mouseX, mouseY);
+    updateMix(); manualUpdate();
 }
 
 function stop() { isPlaying = false; if (audioCtx) audioCtx.close(); document.getElementById('btn-start').innerText = texts[document.querySelector('.lang-bar span.active').id.split('-')[1]].start; }
