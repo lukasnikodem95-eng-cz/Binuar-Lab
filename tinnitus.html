@@ -132,7 +132,6 @@
 </div>
 
 <script>
-// Rozsah frekvence Binaural nyní nastaven na 40 - 400 Hz
 const MIN_FREQ = 40;
 const MAX_FREQ = 400;
 
@@ -156,38 +155,39 @@ function changeLang(lang) {
 }
 
 let audioCtx, oscL, oscR, gainBin, gainNoise, noiseNode, filterNode, isPlaying = false;
-let canvas = document.getElementById('noiseCanvas'), ctx = canvas.getContext('2d'), particles = [];
+let canvas = document.getElementById('noiseCanvas'), ctx = canvas.getContext('2d'), waves = [];
 let mouseX = 0.5, mouseY = 0.5;
 
 function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
 window.addEventListener('resize', resize); resize();
 
-// --- UPRAVENÁ ČÁSTICE (KULIČKA S DELŠÍ ŽIVOTNOSTÍ) ---
-class Particle {
+// --- LOGIKA VLNEK (ZPOMALENO) ---
+class Wave {
     constructor(x, y, color) {
         this.x = x; this.y = y;
-        this.vx = (Math.random() - 0.5) * 6; 
-        this.vy = (Math.random() - 0.5) * 6;
-        this.life = 1.0; 
-        this.decay = 0.01 + Math.random() * 0.01; // Pomalé mizení
+        this.radius = 2;
+        this.life = 1.0;
+        // Pomalé mizení
+        this.decay = 0.005 + Math.random() * 0.003; 
         this.color = color;
-        this.size = Math.random() * 4 + 1;
+        this.lineWidth = 1.5 + Math.random() * 2;
     }
-    update(n) { 
-        this.x += this.vx * (n + 0.3); 
-        this.y += this.vy * (n + 0.3); 
-        this.life -= this.decay; 
+    update(speedMult) {
+        // Zpomaleno: původně bylo 3, teď je 1.2
+        this.radius += 1.2 * (speedMult + 1);
+        this.life -= this.decay;
     }
-    draw() { 
+    draw() {
+        if (this.life <= 0) return;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = this.color.replace('1)', this.life + ')');
-        ctx.fill();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = this.color.replace('1)', this.life + ')');
+        ctx.lineWidth = this.lineWidth * this.life;
+        ctx.stroke();
     }
 }
 
 function animate() {
-    // Zdrojový režim pro plynulý ocas (ghosting)
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = 'rgba(0,0,0,0.15)'; 
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -197,17 +197,19 @@ function animate() {
     const color = `hsla(${hue}, 100%, 60%, 1)`;
     const cursor = document.getElementById('xy-cursor');
     cursor.style.backgroundColor = color; 
-    cursor.style.boxShadow = `0 0 25px ${color}`;
+    cursor.style.boxShadow = `0 0 30px ${color}`;
 
-    // Lighter režim pro zářící efekt kuliček
     ctx.globalCompositeOperation = 'lighter';
 
-    if (isPlaying && Math.random() < (noiseLevel + 0.2)) {
-        for(let i=0; i<3; i++) particles.push(new Particle(mouseX*canvas.width, mouseY*canvas.height, color));
+    if (isPlaying && Math.random() < 0.2) {
+        waves.push(new Wave(mouseX * canvas.width, mouseY * canvas.height, color));
     }
     
-    particles = particles.filter(p => p.life > 0);
-    particles.forEach(p => { p.update(noiseLevel); p.draw(); });
+    waves = waves.filter(w => w.life > 0);
+    waves.forEach(w => { 
+        w.update(noiseLevel); 
+        w.draw(); 
+    });
     
     requestAnimationFrame(animate);
 }
@@ -216,14 +218,10 @@ animate();
 function manualUpdate() {
     let freq = parseFloat(document.getElementById('input-bin').value) || MIN_FREQ;
     let fil = parseFloat(document.getElementById('input-filter').value) || 1000;
-    
-    // Přepočet X pozice podle nového rozsahu 40-400
     mouseX = (freq - MIN_FREQ) / (MAX_FREQ - MIN_FREQ);
     mouseY = 1 - (Math.log(fil / 1000) / Math.log(16000 / 1000));
-    
     mouseX = Math.max(0, Math.min(1, mouseX));
     mouseY = Math.max(0, Math.min(1, mouseY));
-    
     document.getElementById('xy-cursor').style.left = (mouseX * 100) + '%';
     document.getElementById('xy-cursor').style.top = (mouseY * 100) + '%';
     if (isPlaying) updateAudio(mouseX, mouseY, false);
@@ -246,15 +244,12 @@ document.getElementById('xy-pad').addEventListener('touchstart', (e) => { e.prev
 document.getElementById('xy-pad').addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
 
 function updateAudio(x, y, updateInputs) {
-    // Frekvence se teď počítá v rozsahu 40 - 400 Hz
     const freq = MIN_FREQ + (x * (MAX_FREQ - MIN_FREQ));
     const filterFreq = Math.pow(16000 / 1000, (1 - y)) * 1000;
-    
     if(updateInputs) {
         document.getElementById('input-bin').value = freq.toFixed(0);
         document.getElementById('input-filter').value = filterFreq.toFixed(0);
     }
-    
     if (isPlaying) {
         oscL.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
         oscR.frequency.setTargetAtTime(freq + 3, audioCtx.currentTime, 0.1);
