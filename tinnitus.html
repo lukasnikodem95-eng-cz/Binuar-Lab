@@ -3,208 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tinnitus Lab 🔬 - Clean View</title>
+    <title>Tinnitus Precision Lab 🔬</title>
     <style>
-        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
-        .container { max-width: 1100px; margin: auto; padding: 15px; position: relative; }
+        :root { --accent: #ff9900; --bg: #0a0a0a; --panel: #151515; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 500px; width: 100%; }
         
-        h1 { color: #ff9900; text-shadow: 0 0 10px #ff6600; margin-bottom: 5px; position: relative; z-index: 20; }
-        
-        .pad-wrap {
-            width: 100%; height: 500px;
-            margin: 10px 0; position: relative;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500"><path d="M40,20 Q0,20 0,60 L0,440 Q0,480 40,480 L280,480 C330,480 350,440 400,440 L600,440 C650,440 670,480 720,480 L960,480 Q1000,480 1000,440 L1000,60 Q1000,20 960,20 L720,20 C670,20 650,60 600,60 L400,60 C350,60 330,20 280,20 Z" fill="black"/></svg>');
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500"><path d="M40,20 Q0,20 0,60 L0,440 Q0,480 40,480 L280,480 C330,480 350,440 400,440 L600,440 C650,440 670,480 720,480 L960,480 Q1000,480 1000,440 L1000,60 Q1000,20 960,20 L720,20 C670,20 650,60 600,60 L400,60 C350,60 330,20 280,20 Z" fill="black"/></svg>');
-            -webkit-mask-size: 100% 100%;
-            mask-size: 100% 100%;
+        h2 { color: var(--accent); margin-bottom: 20px; font-weight: 300; letter-spacing: 1px; }
+
+        /* ZAOKROUHLENÝ OBDÉLNÍK PRO OVLÁDÁNÍ */
+        .pad-area {
+            width: 100%; height: 300px; background: #000;
+            border: 1px solid #333; border-radius: 25px; /* Tady jsou ty jemné hrany */
+            position: relative; touch-action: none; overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 15px rgba(255,153,0,0.05);
+            margin-bottom: 25px;
         }
 
-        .neon-border {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            border: 1px solid rgba(255,153,0,0.25);
-            border-radius: 40px; 
-            box-sizing: border-box;
-            pointer-events: none;
-            z-index: 1;
+        #cursor {
+            width: 24px; height: 24px; background: var(--accent);
+            border: 3px solid #fff; border-radius: 50%;
+            position: absolute; transform: translate(-50%, -50%);
+            pointer-events: none; transition: background 0.2s;
+            box-shadow: 0 0 15px var(--accent);
         }
 
-        #xy-pad {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            cursor: crosshair; touch-action: none; overflow: hidden;
-            z-index: 5;
+        /* ČÍSELNÉ VSTUPY */
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .card { 
+            background: var(--panel); padding: 15px; border-radius: 20px; 
+            border: 1px solid #222; text-align: center;
+        }
+        .card label { display: block; font-size: 0.7em; color: #666; text-transform: uppercase; margin-bottom: 8px; }
+        .card input {
+            background: transparent; border: none; color: var(--accent);
+            font-size: 1.6em; font-family: 'Courier New', monospace;
+            width: 100%; text-align: center; outline: none;
         }
 
-        canvas#noiseCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        
-        #xy-cursor {
-            width: 22px; height: 22px; border-radius: 50%; position: absolute;
-            transform: translate(-50%, -50%); pointer-events: none; z-index: 10;
-            border: 2px solid #fff; box-shadow: 0 0 20px rgba(255,153,0,0.5);
-            background: rgba(255,153,0,0.3);
+        .btn-play {
+            width: 100%; padding: 20px; border-radius: 50px; border: none;
+            background: var(--accent); color: #000; font-weight: bold;
+            font-size: 1.1em; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(255,153,0,0.2);
         }
-        
-        .stats-pill { 
-            display: flex; justify-content: center; align-items: center; gap: 30px; 
-            background: rgba(10,10,10,0.95); padding: 8px 30px; border-radius: 50px; 
-            width: fit-content; margin: -55px auto 20px auto; border: 1px solid #222;
-            position: relative; z-index: 30;
-        }
-        .stat-item { font-size: 0.85em; color: #ff9900; font-weight: bold; }
-        .stat-item b { color: #fff; margin-left: 5px; font-variant-numeric: tabular-nums; }
-
-        .mixer-section { margin: 25px 0; background: #111; padding: 15px; border-radius: 20px; border: 1px solid #222; }
-        input[type="range"].mixer-fader { width: 100%; accent-color: #ff9900; cursor: pointer; height: 8px; }
-        
-        .btn-start { background: linear-gradient(135deg, #ff6600, #ff9900); color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; width: 100%; cursor: pointer; font-size: 1.1em; box-shadow: 0 4px 15px rgba(255,102,0,0.3); }
-        .btn-stop { background: transparent; color: #444; border: 1px solid #222; padding: 10px; border-radius: 12px; width: 100%; margin-top: 10px; cursor: pointer; font-size: 0.9em; }
+        .btn-play.active { background: #333; color: #888; box-shadow: none; }
     </style>
 </head>
 <body>
+
 <div class="container">
-    
-    <h1>Tinnitus Lab 🔬</h1>
+    <h2>Tinnitus Lab 🔬</h2>
 
-    <div class="pad-wrap">
-        <div class="neon-border"></div>
-        <div id="xy-pad">
-            <canvas id="noiseCanvas"></canvas>
-            <div id="xy-cursor" style="left: 50%; top: 50%;"></div>
+    <div class="pad-area" id="pad">
+        <div id="cursor" style="left: 50%; top: 50%;"></div>
+    </div>
+
+    <div class="input-row">
+        <div class="card">
+            <label>Binaural (Hz)</label>
+            <input type="number" id="in-bin" value="60" oninput="fromInput()">
+        </div>
+        <div class="card">
+            <label>Filtr (Hz)</label>
+            <input type="number" id="in-filter" value="5000" oninput="fromInput()">
         </div>
     </div>
 
-    <div class="stats-pill">
-        <div class="stat-item">Tón: <b id="stat-bin">60</b> Hz</div>
-        <div class="stat-item">Filtr: <b id="stat-filter">5000</b> Hz</div>
-    </div>
-
-    <div class="mixer-section">
-        <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: #666; margin-bottom: 8px; font-weight: bold;">
-            <span>🎧 BINAURÁLNÍ</span>
-            <span>MIXER</span>
-            <span>🌊 ŠUM</span>
-        </div>
-        <input type="range" id="mixer" class="mixer-fader" min="0" max="1" step="0.01" value="0.5" oninput="updateMix()">
-    </div>
-
-    <button class="btn-start" onclick="start()">SPUSTIT TERAPII</button>
-    <button class="btn-stop" onclick="stop()">ZASTAVIT</button>
+    <button class="btn-play" id="btn" onclick="toggle()">SPUSTIT TERAPII</button>
 </div>
 
 <script>
-let audioCtx, oscL, oscR, gainBin, gainNoise, noiseNode, filterNode, isPlaying = false;
-let canvas, ctx, particles = [];
-let mouseX = 0.5, mouseY = 0.5;
+let audioCtx, oscL, oscR, filter, gBin, gNoise, noise, isPlaying = false;
+const pad = document.getElementById('pad');
+const cursor = document.getElementById('cursor');
+const inBin = document.getElementById('in-bin');
+const inFilter = document.getElementById('in-filter');
 
-const pad = document.getElementById('xy-pad');
-const cursor = document.getElementById('xy-cursor');
-canvas = document.getElementById('noiseCanvas');
-ctx = canvas.getContext('2d');
+const minF = 1000, maxF = 18000;
 
-function resize() {
-    canvas.width = pad.offsetWidth;
-    canvas.height = pad.offsetHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-class Particle {
-    constructor(x, y, color) {
-        this.x = x; this.y = y;
-        this.vx = (Math.random() - 0.5) * 6;
-        this.vy = (Math.random() - 0.5) * 6;
-        this.life = 1;
-        this.color = color;
-        this.size = Math.random() * 2 + 1;
-    }
-    update() { this.x += this.vx; this.y += this.vy; this.life -= 0.02; }
-    draw() {
-        ctx.fillStyle = this.color.replace('1)', this.life + ')');
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
-    }
-}
-
-function animate() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const color = `hsla(${240 - (mouseX * 240)}, 100%, 60%, 1)`;
-    if (isPlaying && Math.random() < 0.3) {
-        particles.push(new Particle(mouseX * canvas.width, mouseY * canvas.height, color));
-    }
-    particles = particles.filter(p => p.life > 0);
-    particles.forEach(p => { p.update(); p.draw(); });
-    requestAnimationFrame(animate);
-}
-animate();
-
-function handleMove(e) {
+function update(e) {
     const rect = pad.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    mouseX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    mouseY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-    cursor.style.left = (mouseX * 100) + '%';
-    cursor.style.top = (mouseY * 100) + '%';
-    updateAudio(mouseX, mouseY);
+    const xRaw = e.touches ? e.touches[0].clientX : e.clientX;
+    const yRaw = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    let x = Math.max(0, Math.min(1, (xRaw - rect.left) / rect.width));
+    let y = Math.max(0, Math.min(1, (yRaw - rect.top) / rect.height));
+
+    const fBin = Math.round(40 + (x * 160));
+    const fFil = Math.round(Math.pow(maxF / minF, 1 - y) * minF);
+
+    inBin.value = fBin;
+    inFilter.value = fFil;
+    moveCursor(x, y);
+    if(isPlaying) apply(fBin, fFil);
 }
 
-pad.addEventListener('mousedown', handleMove);
-pad.addEventListener('mousemove', (e) => { if(e.buttons === 1) handleMove(e); });
-pad.addEventListener('touchstart', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
-pad.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
-
-function updateAudio(x, y) {
-    const freq = 40 + (x * 110);
-    const filterFreq = 1000 + ((1 - y) * 11000);
-    document.getElementById('stat-bin').innerText = freq.toFixed(0);
-    document.getElementById('stat-filter').innerText = filterFreq.toFixed(0);
-    if (isPlaying && audioCtx.state === 'running') {
-        oscL.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
-        oscR.frequency.setTargetAtTime(freq + 3, audioCtx.currentTime, 0.1);
-        filterNode.frequency.setTargetAtTime(filterFreq, audioCtx.currentTime, 0.1);
-    }
+function fromInput() {
+    const fb = parseFloat(inBin.value);
+    const ff = parseFloat(inFilter.value);
+    let x = (fb - 40) / 160;
+    let y = 1 - (Math.log(ff / minF) / Math.log(maxF / minF));
+    moveCursor(x, y);
+    if(isPlaying) apply(fb, ff);
 }
 
-function updateMix() {
-    if (!isPlaying) return;
-    const mixVal = parseFloat(document.getElementById('mixer').value);
-    gainBin.gain.setTargetAtTime((1 - mixVal) * 0.4, audioCtx.currentTime, 0.1);
-    gainNoise.gain.setTargetAtTime(mixVal * 0.4, audioCtx.currentTime, 0.1);
+function moveCursor(x, y) {
+    cursor.style.left = (x * 100) + '%';
+    cursor.style.top = (y * 100) + '%';
 }
 
-function start() {
-    if (isPlaying) stop();
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    isPlaying = true;
-    const bufferSize = 2 * audioCtx.sampleRate;
-    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
-    noiseNode = audioCtx.createBufferSource();
-    noiseNode.buffer = noiseBuffer;
-    noiseNode.loop = true;
-    filterNode = audioCtx.createBiquadFilter();
-    filterNode.type = "highpass"; 
-    gainNoise = audioCtx.createGain();
-    oscL = audioCtx.createOscillator();
-    oscR = audioCtx.createOscillator();
-    gainBin = audioCtx.createGain();
-    const merger = audioCtx.createChannelMerger(2);
-    noiseNode.connect(filterNode);
-    filterNode.connect(gainNoise).connect(audioCtx.destination);
-    oscL.connect(merger, 0, 0);
-    oscR.connect(merger, 0, 1);
-    merger.connect(gainBin).connect(audioCtx.destination);
-    noiseNode.start(); oscL.start(); oscR.start();
-    updateMix(); updateAudio(mouseX, mouseY);
+function apply(fb, ff) {
+    oscL.frequency.setTargetAtTime(fb, audioCtx.currentTime, 0.1);
+    oscR.frequency.setTargetAtTime(fb + 3, audioCtx.currentTime, 0.1);
+    filter.frequency.setTargetAtTime(ff, audioCtx.currentTime, 0.1);
 }
 
-function stop() { 
-    isPlaying = false; 
-    if (audioCtx) {
-        audioCtx.close();
-        audioCtx = null;
-    }
+pad.addEventListener('mousedown', (e) => { update(e); window.onmousemove = update; });
+window.addEventListener('mouseup', () => window.onmousemove = null);
+pad.addEventListener('touchstart', (e) => { e.preventDefault(); update(e); }, {passive:false});
+pad.addEventListener('touchmove', (e) => { e.preventDefault(); update(e); }, {passive:false});
+
+function toggle() {
+    if (isPlaying) { audioCtx.close(); isPlaying = false; document.getElementById('btn').innerText="SPUSTIT TERAPII"; document.getElementById('btn').classList.remove('active'); return; }
+    audioCtx = new AudioContext(); isPlaying = true;
+    document.getElementById('btn').innerText="ZASTAVIT"; document.getElementById('btn').classList.add('active');
+
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+    const out = buf.getChannelData(0);
+    for (let i = 0; i < buf.length; i++) out[i] = Math.random() * 2 - 1;
+    
+    noise = audioCtx.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    filter = audioCtx.createBiquadFilter(); filter.type = "highpass";
+    gNoise = audioCtx.createGain(); gNoise.gain.value = 0.2;
+    oscL = audioCtx.createOscillator(); oscR = audioCtx.createOscillator();
+    gBin = audioCtx.createGain(); gBin.gain.value = 0.15;
+    const m = audioCtx.createChannelMerger(2);
+
+    noise.connect(filter).connect(gNoise).connect(audioCtx.destination);
+    oscL.connect(m,0,0); oscR.connect(m,0,1); m.connect(gBin).connect(audioCtx.destination);
+    noise.start(); oscL.start(); oscR.start();
+    fromInput();
 }
 </script>
 </body>
